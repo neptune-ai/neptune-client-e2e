@@ -17,4 +17,4 @@ jobs:
           pip install -r requirements/requirements.txt
       - name: Lint
         run : |
-          python -m pylint -j 0 -f parseable neptune tests
+          python -m pylint -j 0 -f parseable tests
