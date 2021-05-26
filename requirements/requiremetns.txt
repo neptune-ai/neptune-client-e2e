@@ -1,3 +1,7 @@
--r requirements.txt
+Faker
+pylint
+pylintfileheader
+pytest
+pytest-tap
 
 neptune-client

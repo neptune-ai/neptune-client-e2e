@@ -1,3 +1,5 @@
 Faker
+pylint
+pylintfileheader
 pytest
 pytest-tap
