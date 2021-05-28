@@ -64,6 +64,80 @@ class TestAtoms(BaseE2ETest):
             run[key].fetch()
 
 
+class TestNamespace(BaseE2ETest):
+    def test_simple_assign_with_namespace(self, run):
+        namespace = self.gen_key()
+        key = fake.unique.word()
+        value = fake.name()
+
+        run[namespace] = {
+            f"{key}": value
+        }
+        run.sync()
+
+        assert run[f"{namespace}/{key}"].fetch() == value
+
+    def test_direct_reassign_value_created_with_namespace(self, run):
+        namespace = self.gen_key()
+        key = fake.unique.word()
+        value = fake.name()
+
+        run[namespace] = {
+            f"{key}": value
+        }
+        run.sync()
+
+        assert run[f"{namespace}/{key}"].fetch() == value
+
+        new_value = fake.name()
+
+        run[f"{namespace}/{key}"] = new_value
+        run.sync()
+
+        assert run[f"{namespace}/{key}"].fetch() == new_value
+
+    def test_namespace_reassign_value_created_with_namespace(self, run):
+        namespace = self.gen_key()
+        key = f"{fake.unique.word()}/{fake.unique.word()}"
+        value = fake.name()
+
+        run[namespace] = {
+            f"{key}": value
+        }
+        run.sync()
+
+        assert run[f"{namespace}/{key}"].fetch() == value
+
+        new_value = fake.name()
+
+        run[namespace] = {
+            f"{key}": new_value
+        }
+        run.sync()
+
+        assert run[f"{namespace}/{key}"].fetch() == new_value
+
+    def test_namespace_reassign_value_created_with_namespace_distinct_types(self, run):
+        namespace = self.gen_key()
+        key = f"{fake.unique.word()}/{fake.unique.word()}"
+        value = random.randint(0, 100)
+
+        run[namespace] = {
+            f"{key}": value
+        }
+        run.sync()
+
+        assert run[f"{namespace}/{key}"].fetch() == value
+
+        new_value = fake.name()
+
+        with pytest.raises(ValueError):
+            run[namespace] = {
+                f"{key}": new_value
+            }
+            run.sync()
+
+
 class TestStringSet:
     neptune_tags_path = 'sys/tags'
 
