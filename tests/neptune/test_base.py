@@ -65,42 +65,12 @@ class TestAtoms(BaseE2ETest):
 
 
 class TestNamespace(BaseE2ETest):
-    def test_simple_assign_namespace(self, run):
-        namespace = self.gen_key()
-        key = fake.unique.word()
-        value = fake.name()
-
-        run[namespace] = {
-            f"{key}": value
-        }
-        run.sync()
-
-        assert run[f"{namespace}/{key}"].fetch() == value
-
-    def test_direct_reassign_value(self, run):
-        namespace = self.gen_key()
-        key = fake.unique.word()
-        value = fake.name()
-
-        run[namespace] = {
-            f"{key}": value
-        }
-        run.sync()
-
-        assert run[f"{namespace}/{key}"].fetch() == value
-
-        new_value = fake.name()
-
-        run[f"{namespace}/{key}"] = new_value
-        run.sync()
-
-        assert run[f"{namespace}/{key}"].fetch() == new_value
-
-    def test_namespace_reassign_value(self, run):
+    def test_reassigning(self, run):
         namespace = self.gen_key()
         key = f"{fake.unique.word()}/{fake.unique.word()}"
         value = fake.name()
 
+        # Assign a namespace
         run[namespace] = {
             f"{key}": value
         }
@@ -108,16 +78,23 @@ class TestNamespace(BaseE2ETest):
 
         assert run[f"{namespace}/{key}"].fetch() == value
 
-        new_value = fake.name()
+        # Direct reassign internal value
+        value = fake.name()
+        run[f"{namespace}/{key}"] = value
+        run.sync()
 
+        assert run[f"{namespace}/{key}"].fetch() == value
+
+        # Reassigning by namespace
+        value = fake.name()
         run[namespace] = {
-            f"{key}": new_value
+            f"{key}": value
         }
         run.sync()
 
-        assert run[f"{namespace}/{key}"].fetch() == new_value
+        assert run[f"{namespace}/{key}"].fetch() == value
 
-    def test_namespace_distinct_types(self, run):
+    def test_distinct_types(self, run):
         namespace = self.gen_key()
         key = f"{fake.unique.word()}/{fake.unique.word()}"
         value = random.randint(0, 100)
