@@ -65,7 +65,7 @@ class TestAtoms(BaseE2ETest):
 
 
 class TestNamespace(BaseE2ETest):
-    def test_simple_assign_with_namespace(self, run):
+    def test_simple_assign_namespace(self, run):
         namespace = self.gen_key()
         key = fake.unique.word()
         value = fake.name()
@@ -77,7 +77,7 @@ class TestNamespace(BaseE2ETest):
 
         assert run[f"{namespace}/{key}"].fetch() == value
 
-    def test_direct_reassign_value_created_with_namespace(self, run):
+    def test_direct_reassign_value(self, run):
         namespace = self.gen_key()
         key = fake.unique.word()
         value = fake.name()
@@ -96,7 +96,7 @@ class TestNamespace(BaseE2ETest):
 
         assert run[f"{namespace}/{key}"].fetch() == new_value
 
-    def test_namespace_reassign_value_created_with_namespace(self, run):
+    def test_namespace_reassign_value(self, run):
         namespace = self.gen_key()
         key = f"{fake.unique.word()}/{fake.unique.word()}"
         value = fake.name()
@@ -117,7 +117,7 @@ class TestNamespace(BaseE2ETest):
 
         assert run[f"{namespace}/{key}"].fetch() == new_value
 
-    def test_namespace_reassign_value_created_with_namespace_distinct_types(self, run):
+    def test_namespace_distinct_types(self, run):
         namespace = self.gen_key()
         key = f"{fake.unique.word()}/{fake.unique.word()}"
         value = random.randint(0, 100)
