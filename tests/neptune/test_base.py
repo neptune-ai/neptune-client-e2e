@@ -64,6 +64,57 @@ class TestAtoms(BaseE2ETest):
             run[key].fetch()
 
 
+class TestNamespace(BaseE2ETest):
+    def test_reassigning(self, run):
+        namespace = self.gen_key()
+        key = f"{fake.unique.word()}/{fake.unique.word()}"
+        value = fake.name()
+
+        # Assign a namespace
+        run[namespace] = {
+            f"{key}": value
+        }
+        run.sync()
+
+        assert run[f"{namespace}/{key}"].fetch() == value
+
+        # Direct reassign internal value
+        value = fake.name()
+        run[f"{namespace}/{key}"] = value
+        run.sync()
+
+        assert run[f"{namespace}/{key}"].fetch() == value
+
+        # Reassigning by namespace
+        value = fake.name()
+        run[namespace] = {
+            f"{key}": value
+        }
+        run.sync()
+
+        assert run[f"{namespace}/{key}"].fetch() == value
+
+    def test_distinct_types(self, run):
+        namespace = self.gen_key()
+        key = f"{fake.unique.word()}/{fake.unique.word()}"
+        value = random.randint(0, 100)
+
+        run[namespace] = {
+            f"{key}": value
+        }
+        run.sync()
+
+        assert run[f"{namespace}/{key}"].fetch() == value
+
+        new_value = fake.name()
+
+        with pytest.raises(ValueError):
+            run[namespace] = {
+                f"{key}": new_value
+            }
+            run.sync()
+
+
 class TestStringSet:
     neptune_tags_path = 'sys/tags'
 
