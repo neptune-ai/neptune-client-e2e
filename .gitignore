@@ -126,3 +126,7 @@ venv.bak/
 .vscode
 
 stream.bin
+
+# Test generated files
+MNIST
+NeptuneLogger

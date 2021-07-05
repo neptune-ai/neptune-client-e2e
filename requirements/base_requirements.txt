@@ -3,3 +3,6 @@ pylint
 pylintfileheader
 pytest
 pytest-tap
+# integrations
+neptune-pytorch-lightning
+torchvision
