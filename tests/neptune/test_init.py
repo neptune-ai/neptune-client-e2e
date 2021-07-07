@@ -28,7 +28,9 @@ class TestInit(BaseE2ETest):
     def test_resuming_exp(self):
         key = self.gen_key()
 
-        exp = neptune.init()
+        exp = neptune.init(
+            name='E2e init resume'
+        )
         val = fake.word()
         exp[key] = val
         exp.stop()
@@ -40,7 +42,8 @@ class TestInit(BaseE2ETest):
 
     def test_send_source_code(self):
         exp = neptune.init(
-            source_files='**/*.py'
+            source_files='**/*.py',
+            name='E2e init source code'
         )
 
         # download sources

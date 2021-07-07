@@ -19,6 +19,8 @@ import neptune.new as neptune
 
 @pytest.fixture(scope='session')
 def run():
-    exp = neptune.init()
+    exp = neptune.init(
+        name='E2e main run'
+    )
     yield exp
     exp.stop()

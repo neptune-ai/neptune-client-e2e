@@ -59,6 +59,7 @@ class TestPytorchLightning:
         # given (Subject)
         neptune_logger = NeptuneLogger(
             close_after_fit=False,
+            name='Integration pytorch-lightning',
         )
         trainer = pl.Trainer(max_epochs=PARAMS['max_epochs'],
                              logger=neptune_logger)
