@@ -6,6 +6,7 @@ pytest-tap
 # integrations
 neptune-pytorch-lightning
 torchvision
+neptune-fastai
 
 neptune-client
 

@@ -6,5 +6,6 @@ pytest-tap
 # integrations
 neptune-pytorch-lightning
 torchvision
+neptune-fastai
 
 pillow==8.2.0  # https://stackoverflow.com/a/68239032/1565454
