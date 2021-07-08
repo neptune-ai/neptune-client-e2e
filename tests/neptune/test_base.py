@@ -114,6 +114,26 @@ class TestNamespace(BaseE2ETest):
             }
             run.sync()
 
+    def test_delete_namespace(self, run):
+        namespace = fake.unique.word()
+        key1 = fake.unique.word()
+        key2 = fake.unique.word()
+        value1 = fake.name()
+        value2 = fake.name()
+
+        run[namespace][key1] = value1
+        run[namespace][key2] = value2
+        run.sync()
+
+        assert run[namespace][key1].fetch() == value1
+        assert run[namespace][key2].fetch() == value2
+
+        del run[namespace]
+        with pytest.raises(MissingFieldException):
+            run[namespace][key1].fetch()
+        with pytest.raises(MissingFieldException):
+            run[namespace][key2].fetch()
+
 
 class TestStringSet:
     neptune_tags_path = 'sys/tags'
