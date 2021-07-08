@@ -8,4 +8,6 @@ neptune-pytorch-lightning
 torchvision
 neptune-fastai
 
+# bugfixes
 pillow==8.2.0  # https://stackoverflow.com/a/68239032/1565454
+cython  # https://stackoverflow.com/a/54390320/1565454
