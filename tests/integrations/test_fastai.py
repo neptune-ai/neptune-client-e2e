@@ -23,8 +23,6 @@ from fastai.tabular.all import Categorify, FillMissing, Normalize, TabularDataLo
 from fastai.vision.all import ImageDataLoaders, Resize, cnn_learner, get_image_files, resnet34
 from neptune.new.integrations.fastai import NeptuneCallback
 
-from tests.integrations.common import does_series_converge
-
 
 def is_cat(x):
     return x[0].isupper()
