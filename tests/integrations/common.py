@@ -13,14 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-import pytest
-import neptune.new as neptune
+from typing import Sequence
 
 
-@pytest.fixture(scope='session')
-def run():
-    exp = neptune.init(
-        name='E2e main run'
-    )
-    yield exp
-    exp.stop()
+def does_series_converge(seq: Sequence):
+    # very naive implementation, but ok for us
+    third = int(len(seq) / 3)
+    return sum(seq[:third]) > sum(seq[-third:])

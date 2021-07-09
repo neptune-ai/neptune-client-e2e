@@ -13,14 +13,3 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-import pytest
-import neptune.new as neptune
-
-
-@pytest.fixture(scope='session')
-def run():
-    exp = neptune.init(
-        name='E2e main run'
-    )
-    yield exp
-    exp.stop()

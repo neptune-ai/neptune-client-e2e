@@ -1,7 +1,14 @@
+neptune-client
+
 Faker
 pylint
 pylintfileheader
 pytest
 pytest-tap
+# integrations
+neptune-pytorch-lightning
+torchvision
+neptune-fastai
 
-neptune-client
+# bugfixes
+pillow==8.2.0  # https://forums.fast.ai/t/runtimeerror-could-not-infer-dtype-of-pilimage/89697, https://stackoverflow.com/a/68239032/1565454
