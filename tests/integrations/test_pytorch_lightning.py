@@ -72,6 +72,7 @@ class TestPytorchLightning:
         # when
         trainer.fit(model, train_loader)
         run = neptune_logger.run
+        run.sync()
 
         # then
         # correct integration version is logged

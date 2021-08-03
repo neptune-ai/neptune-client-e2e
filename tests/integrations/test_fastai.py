@@ -54,6 +54,7 @@ class TestFastai:
         learn.fit_one_cycle(1)
         learn.fine_tune(2)
         learn.fit(2)
+        run.sync()
 
         # then
         # correct integration version is logged
@@ -111,6 +112,7 @@ class TestFastai:
                                                 base_namespace='experiment'),
                                 SaveModelCallback(monitor='accuracy')
                             ])
+        run.sync()
 
         # then
         # correct integration version is logged
