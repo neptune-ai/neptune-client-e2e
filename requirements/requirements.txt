@@ -1,4 +1,4 @@
-git+https://github.com/neptune-ai/neptune-client.git@rj/e2e-fixes
+neptune-client
 
 Faker
 pylint
