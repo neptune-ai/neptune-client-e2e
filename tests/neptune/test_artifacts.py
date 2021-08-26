@@ -17,7 +17,6 @@ import os
 import tempfile
 from pathlib import Path
 
-import pytest
 from faker import Faker
 
 from neptune.new import Run
