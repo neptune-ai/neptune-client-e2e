@@ -17,7 +17,6 @@ import os
 import tempfile
 from pathlib import Path
 
-import boto3
 import pytest
 from faker import Faker
 
@@ -25,18 +24,6 @@ from neptune.new import Run
 from tests.base import BaseE2ETest
 
 fake = Faker()
-
-
-@pytest.fixture()
-def bucket():
-    bucket_name = os.environ.get('BUCKET_NAME')
-
-    s3_client = boto3.resource('s3')
-    s3_bucket = s3.Bucket(bucket_name)
-
-    yield bucket_name, s3_client
-
-    s3_bucket.objects.all().delete()
 
 
 class TestArtifacts(BaseE2ETest):

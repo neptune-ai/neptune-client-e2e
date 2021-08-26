@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+import os
+import boto3
 import pytest
 import neptune.new as neptune
 
@@ -24,3 +26,15 @@ def run():
     )
     yield exp
     exp.stop()
+
+
+@pytest.fixture()
+def bucket():
+    bucket_name = os.environ.get('BUCKET_NAME')
+
+    s3_client = boto3.resource('s3')
+    s3_bucket = s3_client.Bucket(bucket_name)
+
+    yield bucket_name, s3_client
+
+    s3_bucket.objects.all().delete()
