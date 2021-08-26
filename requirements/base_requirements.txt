@@ -7,7 +7,7 @@ pytest-tap
 neptune-pytorch-lightning
 torchvision
 neptune-fastai
-moto<2.5.0
+boto3
 freezegun
 
 # bugfixes

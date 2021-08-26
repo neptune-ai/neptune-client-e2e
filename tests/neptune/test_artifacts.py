@@ -14,20 +14,14 @@
 # limitations under the License.
 #
 import os
-import glob
-import random
 import tempfile
 from pathlib import Path
-from datetime import datetime, timezone
 
 import boto3
 import pytest
 from faker import Faker
 
-from neptune import new as neptune
-from neptune.new.exceptions import MissingFieldException
 from neptune.new import Run
-from neptune.new.internal.artifacts.types import ArtifactFileData
 from tests.base import BaseE2ETest
 
 fake = Faker()
@@ -36,179 +30,180 @@ fake = Faker()
 @pytest.fixture()
 def bucket():
     bucket_name = os.environ.get('BUCKET_NAME')
-    s3 = boto3.resource('s3')
-    bucket = s3.Bucket(bucket_name)
 
-    yield bucket_name, s3
+    s3_client = boto3.resource('s3')
+    s3_bucket = s3.Bucket(bucket_name)
 
-    bucket.objects.all().delete()
+    yield bucket_name, s3_client
+
+    s3_bucket.objects.all().delete()
 
 
 class TestArtifacts(BaseE2ETest):
     def test_local_creation(self, run: Run):
-        a, b = self.gen_key(), self.gen_key()
+        first, second = self.gen_key(), self.gen_key()
 
         with tempfile.TemporaryDirectory() as tmp:
-            with open(f'{tmp}/{fake.file_name()}', 'w') as handler:
+            with open(f'{tmp}/{fake.file_name()}', 'w', encoding='utf-8') as handler:
                 handler.write(fake.paragraph(nb_sentences=5))
 
-            run[a].track_files(tmp)
-            run[b].track_files(f'file://{tmp}')
+            run[first].track_files(tmp)
+            run[second].track_files(f'file://{tmp}')
 
             run.sync()
 
-        assert run[a].fetch_hash() == run[b].fetch_hash()
-        assert run[a].fetch_files_list() == run[b].fetch_files_list()
+        assert run[first].fetch_hash() == run[second].fetch_hash()
+        assert run[first].fetch_files_list() == run[second].fetch_files_list()
 
     def test_assignment(self, run: Run):
-        a, b = self.gen_key(), self.gen_key()
+        first, second = self.gen_key(), self.gen_key()
         filename = fake.file_name()
 
         with tempfile.TemporaryDirectory() as tmp:
             os.chdir(tmp)
 
-            with open(filename, 'w') as handler:
+            with open(filename, 'w', encoding='utf-8') as handler:
                 handler.write(fake.paragraph(nb_sentences=5))
 
-            run[a].track_files(filename)
-            run[b] = run[a].fetch()
+            run[first].track_files(filename)
+            run[second] = run[first].fetch()
 
             run.sync()
 
-        assert run[a].fetch_hash() == run[b].fetch_hash()
-        assert run[a].fetch_files_list() == run[b].fetch_files_list()
+        assert run[first].fetch_hash() == run[second].fetch_hash()
+        assert run[first].fetch_files_list() == run[second].fetch_files_list()
 
     def test_local_download(self, run: Run):
-        a, b = self.gen_key(), self.gen_key()
+        first, second = self.gen_key(), self.gen_key()
         filename, filepath = fake.file_name(), fake.file_path(depth=3).lstrip('/')
 
         with tempfile.TemporaryDirectory() as tmp:
             os.chdir(tmp)
 
-            with open(filename, 'w') as handler:
+            with open(filename, 'w', encoding='utf-8') as handler:
                 handler.write(fake.paragraph(nb_sentences=5))
 
             os.makedirs(Path(filepath).parent, exist_ok=True)
-            with open(filepath, 'w') as handler:
+            with open(filepath, 'w', encoding='utf-8') as handler:
                 handler.write(fake.paragraph(nb_sentences=5))
 
             # Relative path
-            run[a].track_files(filename)
+            run[first].track_files(filename)
             # Absolute path
-            run[b].track_files(tmp)
+            run[second].track_files(tmp)
 
             run.sync()
 
             with tempfile.TemporaryDirectory() as another_tmp:
                 os.chdir(another_tmp)
 
-                run[a].download('artifacts/')
-                run[b].download('artifacts/')
+                run[first].download('artifacts/')
+                run[second].download('artifacts/')
 
                 assert os.path.exists(f'artifacts/{filename}')
                 assert os.path.exists(f'artifacts/{filepath}')
 
     def test_s3_creation(self, run: Run, bucket):
-        a, b = self.gen_key(), self.gen_key()
+        first, second = self.gen_key(), self.gen_key()
         filename = fake.file_name()
 
-        bucket_name, s3 = bucket
+        bucket_name, s3_client = bucket
 
         with tempfile.TemporaryDirectory() as tmp:
             os.chdir(tmp)
 
-            with open(filename, 'w') as handler:
+            with open(filename, 'w', encoding='utf-8') as handler:
                 handler.write(fake.paragraph(nb_sentences=5))
 
-            s3.meta.client.upload_file(filename, bucket_name, filename)
+            s3_client.meta.client.upload_file(filename, bucket_name, filename)
 
-        run[a].track_files(f's3://{bucket_name}/{filename}')
-        run[b].track_files(f's3://{bucket_name}/')
+        run[first].track_files(f's3://{bucket_name}/{filename}')
+        run[second].track_files(f's3://{bucket_name}/')
 
         run.sync()
 
-        assert run[a].fetch_hash() == run[b].fetch_hash()
-        assert run[a].fetch_files_list() == run[b].fetch_files_list()
+        assert run[first].fetch_hash() == run[second].fetch_hash()
+        assert run[first].fetch_files_list() == run[second].fetch_files_list()
 
     def test_s3_download(self, run: Run, bucket):
-        a = self.gen_key()
+        first = self.gen_key()
         filename, filepath = fake.file_name(), fake.file_path(depth=3).lstrip('/')
 
-        bucket_name, s3 = bucket
+        bucket_name, s3_client = bucket
 
         with tempfile.TemporaryDirectory() as tmp:
             os.chdir(tmp)
 
-            with open(filename, 'w') as handler:
+            with open(filename, 'w', encoding='utf-8') as handler:
                 handler.write(fake.paragraph(nb_sentences=5))
 
             os.makedirs(Path(filepath).parent, exist_ok=True)
-            with open(filepath, 'w') as handler:
+            with open(filepath, 'w', encoding='utf-8') as handler:
                 handler.write(fake.paragraph(nb_sentences=5))
 
-            s3.meta.client.upload_file(filename, bucket_name, filename)
-            s3.meta.client.upload_file(filepath, bucket_name, filepath)
+            s3_client.meta.client.upload_file(filename, bucket_name, filename)
+            s3_client.meta.client.upload_file(filepath, bucket_name, filepath)
 
-        run[a].track_files(f's3://{bucket_name}/')
+        run[first].track_files(f's3://{bucket_name}/')
 
         run.sync()
 
         with tempfile.TemporaryDirectory() as tmp:
-            run[a].download(tmp)
+            run[first].download(tmp)
 
             assert os.path.exists(f'{tmp}/{filename}')
 
     def test_s3_existing(self, run: Run, bucket):
-        a, b = self.gen_key(), self.gen_key()
+        first, second = self.gen_key(), self.gen_key()
         filename, filepath = fake.file_name(), fake.file_path(depth=3).lstrip('/')
 
-        bucket_name, s3 = bucket
+        bucket_name, s3_client = bucket
 
         with tempfile.TemporaryDirectory() as tmp:
             os.chdir(tmp)
 
-            with open(filename, 'w') as handler:
+            with open(filename, 'w', encoding='utf-8') as handler:
                 handler.write(fake.paragraph(nb_sentences=5))
 
             os.makedirs(Path(filepath).parent, exist_ok=True)
-            with open(filepath, 'w') as handler:
+            with open(filepath, 'w', encoding='utf-8') as handler:
                 handler.write(fake.paragraph(nb_sentences=5))
 
-            s3.meta.client.upload_file(filename, bucket_name, filename)
-            s3.meta.client.upload_file(filepath, bucket_name, filepath)
+            s3_client.meta.client.upload_file(filename, bucket_name, filename)
+            s3_client.meta.client.upload_file(filepath, bucket_name, filepath)
 
-        run[a].track_files(f's3://{bucket_name}/')
-        run[b].track_files(f's3://{bucket_name}/{filename}')
+        run[first].track_files(f's3://{bucket_name}/')
+        run[second].track_files(f's3://{bucket_name}/{filename}')
         run.sync()
 
         # Track to existing
-        run[b].track_files(f's3://{bucket_name}/{filepath}', destination=str(Path(filepath).parent))
+        run[second].track_files(f's3://{bucket_name}/{filepath}', destination=str(Path(filepath).parent))
         run.sync()
 
-        assert run[a].fetch_hash() == run[b].fetch_hash()
-        assert run[a].fetch_files_list() == run[b].fetch_files_list()
+        assert run[first].fetch_hash() == run[second].fetch_hash()
+        assert run[first].fetch_files_list() == run[second].fetch_files_list()
 
     def test_local_existing(self, run: Run):
-        a, b = self.gen_key(), self.gen_key()
+        first, second = self.gen_key(), self.gen_key()
         filename, filepath = fake.file_name(), fake.file_path(depth=3).lstrip('/')
 
         with tempfile.TemporaryDirectory() as tmp:
             os.chdir(tmp)
 
-            with open(filename, 'w') as handler:
+            with open(filename, 'w', encoding='utf-8') as handler:
                 handler.write(fake.paragraph(nb_sentences=5))
 
             os.makedirs(Path(filepath).parent, exist_ok=True)
-            with open(filepath, 'w') as handler:
+            with open(filepath, 'w', encoding='utf-8') as handler:
                 handler.write(fake.paragraph(nb_sentences=5))
 
-            run[a].track_files('.')
-            run[b].track_files(f'file://{tmp}/{filename}')
+            run[first].track_files('.')
+            run[second].track_files(f'file://{tmp}/{filename}')
             run.sync()
 
             # Track to existing
-            run[b].track_files(filepath, destination=str(Path(filepath).parent))
+            run[second].track_files(filepath, destination=str(Path(filepath).parent))
             run.sync()
 
-        assert run[a].fetch_hash() == run[b].fetch_hash()
-        assert run[a].fetch_files_list() == run[b].fetch_files_list()
+        assert run[first].fetch_hash() == run[second].fetch_hash()
+        assert run[first].fetch_files_list() == run[second].fetch_files_list()
