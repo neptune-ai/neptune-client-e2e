@@ -21,7 +21,7 @@ from faker import Faker
 
 from neptune.new import Run
 from tests.base import BaseE2ETest
-from tests.utils import with_check_if_file_appears
+from tests.utils import with_check_if_file_appears, preserve_cwd
 
 fake = Faker()
 
@@ -29,15 +29,17 @@ fake = Faker()
 class TestArtifacts(BaseE2ETest):
     def test_local_creation(self, run: Run):
         first, second = self.gen_key(), self.gen_key()
+        filename = fake.file_name()
 
         with tempfile.TemporaryDirectory() as tmp:
-            with open(f'{tmp}/{fake.file_name()}', 'w', encoding='utf-8') as handler:
-                handler.write(fake.paragraph(nb_sentences=5))
+            with preserve_cwd(tmp):
+                with open(filename, 'w', encoding='utf-8') as handler:
+                    handler.write(fake.paragraph(nb_sentences=5))
 
-            run[first].track_files(tmp)
-            run[second].track_files(f'file://{tmp}')
+                run[first].track_files('.')
+                run[second].track_files(f'file://{tmp}')
 
-            run.sync()
+                run.sync()
 
         assert run[first].fetch_hash() == run[second].fetch_hash()
         assert run[first].fetch_files_list() == run[second].fetch_files_list()
@@ -47,15 +49,15 @@ class TestArtifacts(BaseE2ETest):
         filename = fake.file_name()
 
         with tempfile.TemporaryDirectory() as tmp:
-            os.chdir(tmp)
+            with preserve_cwd(tmp):
 
-            with open(filename, 'w', encoding='utf-8') as handler:
-                handler.write(fake.paragraph(nb_sentences=5))
+                with open(filename, 'w', encoding='utf-8') as handler:
+                    handler.write(fake.paragraph(nb_sentences=5))
 
-            run[first].track_files(filename)
-            run[second] = run[first].fetch()
+                run[first].track_files(filename)
+                run[second] = run[first].fetch()
 
-            run.sync()
+                run.sync()
 
         assert run[first].fetch_hash() == run[second].fetch_hash()
         assert run[first].fetch_files_list() == run[second].fetch_files_list()
@@ -65,30 +67,29 @@ class TestArtifacts(BaseE2ETest):
         filename, filepath = fake.file_name(), fake.file_path(depth=3).lstrip('/')
 
         with tempfile.TemporaryDirectory() as tmp:
-            os.chdir(tmp)
+            with preserve_cwd(tmp):
 
-            with open(filename, 'w', encoding='utf-8') as handler:
-                handler.write(fake.paragraph(nb_sentences=5))
+                with open(filename, 'w', encoding='utf-8') as handler:
+                    handler.write(fake.paragraph(nb_sentences=5))
 
-            os.makedirs(Path(filepath).parent, exist_ok=True)
-            with open(filepath, 'w', encoding='utf-8') as handler:
-                handler.write(fake.paragraph(nb_sentences=5))
+                os.makedirs(Path(filepath).parent, exist_ok=True)
+                with open(filepath, 'w', encoding='utf-8') as handler:
+                    handler.write(fake.paragraph(nb_sentences=5))
 
-            # Relative path
-            run[first].track_files(filename)
-            # Absolute path
-            run[second].track_files(tmp)
+                # Relative path
+                run[first].track_files(filename)
+                # Absolute path
+                run[second].track_files(tmp)
 
-            run.sync()
+                run.sync()
 
-            with tempfile.TemporaryDirectory() as another_tmp:
-                os.chdir(another_tmp)
+                with tempfile.TemporaryDirectory() as another_tmp:
+                    with preserve_cwd(another_tmp):
+                        with with_check_if_file_appears(f'artifacts/{filename}'):
+                            run[first].download('artifacts/')
 
-                with with_check_if_file_appears(f'artifacts/{filename}'):
-                    run[first].download('artifacts/')
-
-                with with_check_if_file_appears(f'artifacts/{filepath}'):
-                    run[second].download('artifacts/')
+                        with with_check_if_file_appears(f'artifacts/{filepath}'):
+                            run[second].download('artifacts/')
 
     def test_s3_creation(self, run: Run, bucket):
         first, second = self.gen_key(), self.gen_key()
@@ -97,12 +98,12 @@ class TestArtifacts(BaseE2ETest):
         bucket_name, s3_client = bucket
 
         with tempfile.TemporaryDirectory() as tmp:
-            os.chdir(tmp)
+            with preserve_cwd(tmp):
 
-            with open(filename, 'w', encoding='utf-8') as handler:
-                handler.write(fake.paragraph(nb_sentences=5))
+                with open(filename, 'w', encoding='utf-8') as handler:
+                    handler.write(fake.paragraph(nb_sentences=5))
 
-            s3_client.meta.client.upload_file(filename, bucket_name, filename)
+                s3_client.meta.client.upload_file(filename, bucket_name, filename)
 
         run[first].track_files(f's3://{bucket_name}/{filename}')
         run[second].track_files(f's3://{bucket_name}/')
@@ -119,17 +120,17 @@ class TestArtifacts(BaseE2ETest):
         bucket_name, s3_client = bucket
 
         with tempfile.TemporaryDirectory() as tmp:
-            os.chdir(tmp)
+            with preserve_cwd(tmp):
 
-            with open(filename, 'w', encoding='utf-8') as handler:
-                handler.write(fake.paragraph(nb_sentences=5))
+                with open(filename, 'w', encoding='utf-8') as handler:
+                    handler.write(fake.paragraph(nb_sentences=5))
 
-            os.makedirs(Path(filepath).parent, exist_ok=True)
-            with open(filepath, 'w', encoding='utf-8') as handler:
-                handler.write(fake.paragraph(nb_sentences=5))
+                os.makedirs(Path(filepath).parent, exist_ok=True)
+                with open(filepath, 'w', encoding='utf-8') as handler:
+                    handler.write(fake.paragraph(nb_sentences=5))
 
-            s3_client.meta.client.upload_file(filename, bucket_name, filename)
-            s3_client.meta.client.upload_file(filepath, bucket_name, filepath)
+                s3_client.meta.client.upload_file(filename, bucket_name, filename)
+                s3_client.meta.client.upload_file(filepath, bucket_name, filepath)
 
         run[first].track_files(f's3://{bucket_name}/')
 
@@ -146,17 +147,17 @@ class TestArtifacts(BaseE2ETest):
         bucket_name, s3_client = bucket
 
         with tempfile.TemporaryDirectory() as tmp:
-            os.chdir(tmp)
+            with preserve_cwd(tmp):
 
-            with open(filename, 'w', encoding='utf-8') as handler:
-                handler.write(fake.paragraph(nb_sentences=5))
+                with open(filename, 'w', encoding='utf-8') as handler:
+                    handler.write(fake.paragraph(nb_sentences=5))
 
-            os.makedirs(Path(filepath).parent, exist_ok=True)
-            with open(filepath, 'w', encoding='utf-8') as handler:
-                handler.write(fake.paragraph(nb_sentences=5))
+                os.makedirs(Path(filepath).parent, exist_ok=True)
+                with open(filepath, 'w', encoding='utf-8') as handler:
+                    handler.write(fake.paragraph(nb_sentences=5))
 
-            s3_client.meta.client.upload_file(filename, bucket_name, filename)
-            s3_client.meta.client.upload_file(filepath, bucket_name, filepath)
+                s3_client.meta.client.upload_file(filename, bucket_name, filename)
+                s3_client.meta.client.upload_file(filepath, bucket_name, filepath)
 
         run[first].track_files(f's3://{bucket_name}/')
         run[second].track_files(f's3://{bucket_name}/{filename}')
@@ -174,22 +175,22 @@ class TestArtifacts(BaseE2ETest):
         filename, filepath = fake.file_name(), fake.file_path(depth=3).lstrip('/')
 
         with tempfile.TemporaryDirectory() as tmp:
-            os.chdir(tmp)
+            with preserve_cwd(tmp):
+                print(os.getcwd(), Path(tmp))
+                with open(filename, 'w', encoding='utf-8') as handler:
+                    handler.write(fake.paragraph(nb_sentences=5))
 
-            with open(filename, 'w', encoding='utf-8') as handler:
-                handler.write(fake.paragraph(nb_sentences=5))
+                os.makedirs(Path(filepath).parent, exist_ok=True)
+                with open(filepath, 'w', encoding='utf-8') as handler:
+                    handler.write(fake.paragraph(nb_sentences=5))
 
-            os.makedirs(Path(filepath).parent, exist_ok=True)
-            with open(filepath, 'w', encoding='utf-8') as handler:
-                handler.write(fake.paragraph(nb_sentences=5))
+                run[first].track_files('.')
+                run[second].track_files(f'file://{tmp}/{filename}')
+                run.sync()
 
-            run[first].track_files('.')
-            run[second].track_files(f'file://{tmp}/{filename}')
-            run.sync()
-
-            # Track to existing
-            run[second].track_files(filepath, destination=str(Path(filepath).parent))
-            run.sync()
+                # Track to existing
+                run[second].track_files(filepath, destination=str(Path(filepath).parent))
+                run.sync()
 
         assert run[first].fetch_hash() == run[second].fetch_hash()
         assert run[first].fetch_files_list() == run[second].fetch_files_list()

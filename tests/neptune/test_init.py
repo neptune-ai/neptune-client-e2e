@@ -34,7 +34,6 @@ class TestInit(BaseE2ETest):
         val = fake.word()
         exp[key] = val
         exp.stop()
-
         exp.sync()
 
         exp2 = neptune.init(run=exp._short_id)  # pylint: disable=protected-access
