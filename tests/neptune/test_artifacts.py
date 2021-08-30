@@ -21,6 +21,7 @@ from faker import Faker
 
 from neptune.new import Run
 from tests.base import BaseE2ETest
+from tests.utils import with_check_if_file_appears
 
 fake = Faker()
 
@@ -83,11 +84,11 @@ class TestArtifacts(BaseE2ETest):
             with tempfile.TemporaryDirectory() as another_tmp:
                 os.chdir(another_tmp)
 
-                run[first].download('artifacts/')
-                run[second].download('artifacts/')
+                with with_check_if_file_appears(f'artifacts/{filename}'):
+                    run[first].download('artifacts/')
 
-                assert os.path.exists(f'artifacts/{filename}')
-                assert os.path.exists(f'artifacts/{filepath}')
+                with with_check_if_file_appears(f'artifacts/{filepath}'):
+                    run[second].download('artifacts/')
 
     def test_s3_creation(self, run: Run, bucket):
         first, second = self.gen_key(), self.gen_key()
@@ -135,9 +136,8 @@ class TestArtifacts(BaseE2ETest):
         run.sync()
 
         with tempfile.TemporaryDirectory() as tmp:
-            run[first].download(tmp)
-
-            assert os.path.exists(f'{tmp}/{filename}')
+            with with_check_if_file_appears(f'{tmp}/{filename}'):
+                run[first].download(tmp)
 
     def test_s3_existing(self, run: Run, bucket):
         first, second = self.gen_key(), self.gen_key()
