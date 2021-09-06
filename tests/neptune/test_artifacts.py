@@ -159,11 +159,15 @@ class TestArtifacts(BaseE2ETest):
                 s3_client.meta.client.upload_file(filename, bucket_name, filename)
                 s3_client.meta.client.upload_file(filepath, bucket_name, filepath)
 
+        # Track all files - "a" and "b" to first namespace
         run[first].track_files(f's3://{bucket_name}/')
+
+        # Track only the "a" file to second namespace
         run[second].track_files(f's3://{bucket_name}/{filename}')
         run.sync()
 
-        # Track to existing
+        # Add "b" file to existing artifact in second namespace
+        # so it should be identical as first namespace
         run[second].track_files(f's3://{bucket_name}/{filepath}', destination=str(Path(filepath).parent))
         run.sync()
 
@@ -176,7 +180,6 @@ class TestArtifacts(BaseE2ETest):
 
         with tempfile.TemporaryDirectory() as tmp:
             with preserve_cwd(tmp):
-                print(os.getcwd(), Path(tmp))
                 with open(filename, 'w', encoding='utf-8') as handler:
                     handler.write(fake.paragraph(nb_sentences=5))
 
@@ -184,11 +187,15 @@ class TestArtifacts(BaseE2ETest):
                 with open(filepath, 'w', encoding='utf-8') as handler:
                     handler.write(fake.paragraph(nb_sentences=5))
 
+                # Track all files - "a" and "b" to first namespace
                 run[first].track_files('.')
+
+                # Track only the "a" file to second namespace
                 run[second].track_files(f'file://{tmp}/{filename}')
                 run.sync()
 
-                # Track to existing
+                # Add "b" file to existing artifact in second namespace
+                # so it should be identical as first namespace
                 run[second].track_files(filepath, destination=str(Path(filepath).parent))
                 run.sync()
 
