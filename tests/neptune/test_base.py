@@ -19,7 +19,6 @@ from datetime import datetime, timezone
 import pytest
 from faker import Faker
 
-from neptune.new.exceptions import MissingFieldException
 from tests.base import BaseE2ETest
 
 fake = Faker()
@@ -47,7 +46,7 @@ class TestAtoms(BaseE2ETest):
 
     def test_fetch_non_existing_key(self, run):
         key = self.gen_key()
-        with pytest.raises(MissingFieldException):
+        with pytest.raises(AttributeError):
             run[key].fetch()
 
     def test_delete_atom(self, run):
@@ -60,7 +59,7 @@ class TestAtoms(BaseE2ETest):
         assert run[key].fetch() == value
 
         del run[key]
-        with pytest.raises(MissingFieldException):
+        with pytest.raises(AttributeError):
             run[key].fetch()
 
 
@@ -129,9 +128,9 @@ class TestNamespace(BaseE2ETest):
         assert run[namespace][key2].fetch() == value2
 
         del run[namespace]
-        with pytest.raises(MissingFieldException):
+        with pytest.raises(AttributeError):
             run[namespace][key1].fetch()
-        with pytest.raises(MissingFieldException):
+        with pytest.raises(AttributeError):
             run[namespace][key2].fetch()
 
 
@@ -143,7 +142,7 @@ class TestStringSet:
         run[random_path].add(fake.unique.word())
         run.sync()
 
-        with pytest.raises(MissingFieldException):
+        with pytest.raises(AttributeError):
             # backends accepts `'sys/tags'` only
             run[random_path].fetch()
 
