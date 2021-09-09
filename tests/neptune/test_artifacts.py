@@ -55,8 +55,8 @@ class TestArtifacts(BaseE2ETest):
                     handler.write(fake.paragraph(nb_sentences=5))
 
                 run[first].track_files(filename)
+                run.wait()
                 run[second] = run[first].fetch()
-
                 run.sync()
 
         assert run[first].fetch_hash() == run[second].fetch_hash()
@@ -88,8 +88,8 @@ class TestArtifacts(BaseE2ETest):
                         with with_check_if_file_appears(f'artifacts/{filename}'):
                             run[first].download('artifacts/')
 
-                        with with_check_if_file_appears(f'artifacts/{filepath}'):
-                            run[second].download('artifacts/')
+                        with with_check_if_file_appears(filepath):
+                            run[second].download()
 
     def test_s3_creation(self, run: Run, bucket):
         first, second = self.gen_key(), self.gen_key()
@@ -139,6 +139,11 @@ class TestArtifacts(BaseE2ETest):
         with tempfile.TemporaryDirectory() as tmp:
             with with_check_if_file_appears(f'{tmp}/{filename}'):
                 run[first].download(tmp)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            with preserve_cwd(tmp):
+                with with_check_if_file_appears(filename):
+                    run[first].download()
 
     def test_s3_existing(self, run: Run, bucket):
         first, second = self.gen_key(), self.gen_key()
