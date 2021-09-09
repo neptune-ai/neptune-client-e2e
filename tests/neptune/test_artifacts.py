@@ -15,6 +15,7 @@
 #
 import os
 import tempfile
+import time
 from pathlib import Path
 
 from faker import Faker
@@ -206,3 +207,36 @@ class TestArtifacts(BaseE2ETest):
 
         assert run[first].fetch_hash() == run[second].fetch_hash()
         assert run[first].fetch_files_list() == run[second].fetch_files_list()
+
+    def test_hash_cache(self, run: Run):
+        key = self.gen_key()
+        filename = fake.file_name()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            with preserve_cwd(tmp):
+                # create 2GB file
+                with open(filename, 'wb') as handler:
+                    handler.write(b'\0' * 2 * 2 ** 30)
+
+                # track it
+                start = time.time()
+                run[key].track_files('.', wait=True)
+                initial_duration = time.time() - start
+
+                # and track it again
+                start = time.time()
+                run[key].track_files('.', wait=True)
+                retry_duration = time.time() - start
+
+                assert retry_duration * 2 < initial_duration, "Tracking again should be significantly faster"
+
+                # append additional byte to file
+                with open(filename, 'ab') as handler:
+                    handler.write(b'\0')
+
+                # and track updated file
+                start = time.time()
+                run[key].track_files('.', wait=True)
+                updated_duration = time.time() - start
+
+                assert retry_duration * 2 < updated_duration, "Tracking updated file should take more time - no cache"
