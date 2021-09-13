@@ -146,7 +146,6 @@ class MNISTDataModule(pl.LightningDataModule):
         self.batch_size = batch_size
         self.normalization_vector = normalization_vector
         self.mnist_train = None
-        # self.mnist_val = None
         self.mnist_val1 = None
         self.mnist_val2 = None
         self.mnist_test = None
@@ -162,7 +161,8 @@ class MNISTDataModule(pl.LightningDataModule):
                                                              self.normalization_vector[1])])
         if stage == "fit":
             mnist_train = MNIST(os.getcwd(), train=True, transform=transform)
-            self.mnist_train, self.mnist_val1, self.mnist_val2 = random_split(mnist_train, [50000, 5000, 5000])
+            # do not use whole set, to save time spent on training
+            self.mnist_train, self.mnist_val1, self.mnist_val2, _ = random_split(mnist_train, [5000, 500, 500, 54000])
         if stage == "test":
             self.mnist_test = MNIST(os.getcwd(), train=False, transform=transform)
 
@@ -188,7 +188,6 @@ class TestPytorchLightning(unittest.TestCase):
         # given
         cls.common_neptune_run = neptune.init(
             name='Integration pytorch-lightning',
-            tags=['jk-test'],
         )
         # and
         model_checkpoint = ModelCheckpoint(
