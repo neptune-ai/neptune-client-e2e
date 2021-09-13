@@ -21,6 +21,7 @@ import neptune.new as neptune
 import numpy as np
 import torch
 import torch.nn.functional as F
+from pytorch_lightning.utilities.types import EVAL_DATALOADERS
 from sklearn.metrics import accuracy_score
 from torch.optim.lr_scheduler import LambdaLR
 from torch.utils.data import DataLoader, random_split
@@ -88,7 +89,7 @@ class LitModel(pl.LightningModule):
             y_true = np.append(y_true, results_dict["y_true"])
             y_pred = np.append(y_pred, results_dict["y_pred"])
         acc = accuracy_score(y_true, y_pred)
-        self.log(f"train/loader_acc", acc)
+        self.log("train/loader_acc", acc)
 
     def validation_step(self, batch, batch_idx, dataset_idx):
         x, y = batch
@@ -109,7 +110,7 @@ class LitModel(pl.LightningModule):
                 y_true = np.append(y_true, results_dict["y_true"])
                 y_pred = np.append(y_pred, results_dict["y_pred"])
             acc = accuracy_score(y_true, y_pred)
-            self.log(f"val/loader_acc", acc)
+            self.log("val/loader_acc", acc)
 
     def test_step(self, batch, batch_idx):
         x, y = batch
@@ -137,10 +138,14 @@ class LitModel(pl.LightningModule):
             y_true = np.append(y_true, results_dict["y_true"])
             y_pred = np.append(y_pred, results_dict["y_pred"])
         acc = accuracy_score(y_true, y_pred)
-        self.log(f"test/acc", acc)
+        self.log("test/acc", acc)
 
 
 class MNISTDataModule(pl.LightningDataModule):
+    def predict_dataloader(self) -> EVAL_DATALOADERS:
+        # not required for e2e test
+        pass
+
     def __init__(self, batch_size, normalization_vector):
         super().__init__()
         self.batch_size = batch_size
@@ -154,7 +159,7 @@ class MNISTDataModule(pl.LightningDataModule):
         MNIST(os.getcwd(), train=True, download=True)
         MNIST(os.getcwd(), train=False, download=True)
 
-    def setup(self, stage):
+    def setup(self, stage=None):
         # transforms
         transform = transforms.Compose([transforms.ToTensor(),
                                         transforms.Normalize(self.normalization_vector[0],
@@ -217,20 +222,20 @@ class TestPytorchLightning(unittest.TestCase):
             decay_factor=PARAMS['decay_factor'],
             neptune_logger=neptune_logger
         )
-        dm = MNISTDataModule(
+        data_module = MNISTDataModule(
             normalization_vector=((0.1307,), (0.3081,)),
             batch_size=PARAMS['batch_size']
         )
 
         # then
-        trainer.fit(model, datamodule=dm)
-        trainer.test(model, datamodule=dm)
+        trainer.fit(model, datamodule=data_module)
+        trainer.test(model, datamodule=data_module)
         cls.common_neptune_run.sync()
 
     def test_logging_values(self):
         # correct integration version is logged
         logged_version = self.common_neptune_run['source_code/integrations/pytorch-lightning'].fetch()
-        assert logged_version == pl.__version__
+        assert logged_version == pl.__version__  # pylint: disable=E1101
 
         # epoch are logged in steps [1, 1, ...., 2, 2, ..., 3, 3 ...]
         logged_epochs = list(self.common_neptune_run['custom_prefix/epoch'].fetch_values()['value'])
