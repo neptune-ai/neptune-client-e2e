@@ -136,8 +136,37 @@ class TestNamespace(BaseE2ETest):
             run[namespace][key2].fetch()
 
 
+class TestStringSet:
+    neptune_tags_path = 'sys/tags'
+
+    def test_do_not_accept_non_tag_path(self, run):
+        random_path = 'some/path'
+        run[random_path].add(fake.unique.word())
+        run.sync()
+
+        with pytest.raises(AttributeError):
+            # backends accepts `'sys/tags'` only
+            run[random_path].fetch()
+
+    def test_add_and_remove_tags(self, run):
+        remaining_tag1 = fake.unique.word()
+        remaining_tag2 = fake.unique.word()
+        to_remove_tag1 = fake.unique.word()
+        to_remove_tag2 = fake.unique.word()
+
+        run[self.neptune_tags_path].add(remaining_tag1)
+        run[self.neptune_tags_path].add([to_remove_tag1, remaining_tag2])
+        run[self.neptune_tags_path].remove(to_remove_tag1)
+        run[self.neptune_tags_path].remove(to_remove_tag2)  # remove non existing tag
+        run.sync()
+
+        assert run[self.neptune_tags_path].fetch() == {remaining_tag1, remaining_tag2}
+
+
 class TestMultipleRuns:
     def test_multiple_runs_single(self, run: neptune.Run):
+        # pylint: disable=protected-access,undefined-loop-variable
+
         number_of_reinitialized = 5
         namespace = fake.unique.word()
 
@@ -147,7 +176,7 @@ class TestMultipleRuns:
         run.sync()
 
         random.shuffle(reinitialized_runs)
-        for index, run in enumerate(reinitialized_runs):
+        for run in reinitialized_runs:
             run[f'{namespace}/{fake.unique.word()}'] = fake.color()
 
         random.shuffle(reinitialized_runs)
@@ -163,6 +192,8 @@ class TestMultipleRuns:
         reinitialized_run.sync()
 
     def test_multiple_runs_thread(self, run: neptune.Run):
+        # pylint: disable=protected-access
+
         number_of_reinitialized = 10
         namespace = fake.unique.word()
 
@@ -181,6 +212,8 @@ class TestMultipleRuns:
         assert len(run[namespace].fetch()) == number_of_reinitialized + 1
 
     def test_multiple_runs_processes(self, run: neptune.Run):
+        # pylint: disable=protected-access
+
         number_of_reinitialized = 10
         namespace = fake.unique.word()
 
