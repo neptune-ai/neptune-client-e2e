@@ -13,10 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-import os
-from collections import namedtuple
-
-import pytest
 from faker import Faker
 
 from neptune.management import (
@@ -32,26 +28,9 @@ from neptune.management import (
 )
 from neptune.management.internal.utils import normalize_project_name
 from tests.base import BaseE2ETest
+from tests.conftest import Environment
 
 fake = Faker()
-
-
-Environment = namedtuple(
-    'Environment',
-    ['workspace', 'project', 'user_token', 'admin_token', 'admin', 'user']
-)
-
-
-@pytest.fixture()
-def environment():
-    yield Environment(
-        workspace=os.getenv('WORKSPACE_NAME'),
-        project=os.getenv('NEPTUNE_PROJECT'),
-        user_token=os.getenv('NEPTUNE_API_TOKEN'),
-        admin_token=os.getenv('ADMIN_NEPTUNE_API_TOKEN'),
-        admin=os.getenv('ADMIN_USERNAME'),
-        user=os.getenv('USER_USERNAME'),
-    )
 
 
 class TestManagement(BaseE2ETest):
