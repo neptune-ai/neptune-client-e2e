@@ -14,8 +14,11 @@
 # limitations under the License.
 #
 import os
+from collections import namedtuple
+
 import boto3
 import pytest
+
 import neptune.new as neptune
 
 
@@ -38,3 +41,21 @@ def bucket():
     yield bucket_name, s3_client
 
     s3_bucket.objects.all().delete()
+
+
+Environment = namedtuple(
+    'Environment',
+    ['workspace', 'project', 'user_token', 'admin_token', 'admin', 'user']
+)
+
+
+@pytest.fixture()
+def environment():
+    yield Environment(
+        workspace=os.getenv('WORKSPACE_NAME'),
+        project=os.getenv('NEPTUNE_PROJECT'),
+        user_token=os.getenv('NEPTUNE_API_TOKEN'),
+        admin_token=os.getenv('ADMIN_NEPTUNE_API_TOKEN'),
+        admin=os.getenv('ADMIN_USERNAME'),
+        user=os.getenv('USER_USERNAME'),
+    )

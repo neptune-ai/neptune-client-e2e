@@ -1,4 +1,4 @@
-neptune-client
+git+https://github.com/neptune-ai/neptune-client.git@master
 
 Faker
 pylint
