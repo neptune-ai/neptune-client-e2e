@@ -36,6 +36,7 @@ fake = Faker()
 class TestManagement(BaseE2ETest):
     def test_standard_scenario(self, environment: Environment):
         project_name: str = fake.slug()
+        project_key: str = project_name.replace("-", "")[:3].upper()
         project_identifier: str = normalize_project_name(name=project_name, workspace=environment.workspace)
 
         assert project_identifier not in get_project_list(api_token=environment.admin_token)
@@ -50,7 +51,7 @@ class TestManagement(BaseE2ETest):
 
         created_project_identifier = create_project(
             name=project_name,
-            key=project_name[:3].upper(),
+            key=project_key,
             visibility=ProjectVisibility.PRIVATE,
             workspace=environment.workspace,
             api_token=environment.admin_token
