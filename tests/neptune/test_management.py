@@ -67,7 +67,7 @@ class TestManagement(BaseE2ETest):
         add_project_member(
             name=created_project_identifier,
             username=environment.user,
-            role=MemberRole.OWNER,
+            role=MemberRole.CONTRIBUTOR,
             api_token=environment.admin_token
         )
 
@@ -78,7 +78,7 @@ class TestManagement(BaseE2ETest):
         assert get_project_member_list(
             name=created_project_identifier,
             api_token=environment.admin_token
-        ).get(environment.user) == 'owner'
+        ).get(environment.user) == 'contributor'
         assert created_project_identifier in get_project_list(api_token=environment.user_token)
 
         remove_project_member(
