@@ -67,6 +67,7 @@ class TestManagement(BaseE2ETest):
         add_project_member(
             name=created_project_identifier,
             username=environment.user,
+            # pylint: disable=no-member
             role=MemberRole.CONTRIBUTOR,
             api_token=environment.admin_token
         )
