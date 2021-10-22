@@ -8,6 +8,7 @@ pytest-tap
 # integrations
 neptune-pytorch-lightning
 torchvision
+fastai>=2.4
 neptune-fastai
 boto3
 
