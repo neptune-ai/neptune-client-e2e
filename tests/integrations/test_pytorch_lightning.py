@@ -137,7 +137,7 @@ class LitModel(pl.LightningModule):
             img = img / np.amax(img)
             self.neptune_logger.experiment["model_code/test/misclassified_images"].log(
                 neptune.types.File.as_image(img),
-                description="y_pred={}, y_true={}".format(y_pred[j], y_true[j]),
+                description=f"y_pred={y_pred[j]}, y_true={y_true[j]}",
             )
         return {"loss": loss,
                 "y_true": y_true,
