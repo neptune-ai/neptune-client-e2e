@@ -21,7 +21,7 @@ import neptune.new as neptune
 import numpy as np
 import torch
 import torch.nn.functional as F
-from pytorch_lightning.utilities.types import EVAL_DATALOADERS
+from pytorch_lightning.utilities.types import EVAL_DATALOADERS, TRAIN_DATALOADERS
 from sklearn.metrics import accuracy_score
 from torch.optim.lr_scheduler import LambdaLR
 from torch.utils.data import DataLoader, random_split
@@ -45,6 +45,18 @@ PARAMS = {
 
 
 class LitModel(pl.LightningModule):
+    def train_dataloader(self) -> TRAIN_DATALOADERS:
+        """Not used, for pylint only"""
+
+    def test_dataloader(self) -> EVAL_DATALOADERS:
+        """Not used, for pylint only"""
+
+    def val_dataloader(self) -> EVAL_DATALOADERS:
+        """Not used, for pylint only"""
+
+    def predict_dataloader(self) -> EVAL_DATALOADERS:
+        """Not used, for pylint only"""
+
     def __init__(self, linear, learning_rate, decay_factor, neptune_logger):
         super().__init__()
         self.linear = linear
