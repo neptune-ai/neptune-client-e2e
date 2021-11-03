@@ -94,7 +94,8 @@ class TestArtifacts(BaseE2ETest):
 
     def test_s3_creation(self, run: Run, bucket):
         first, second = self.gen_key(), self.gen_key()
-        filename = fake.file_name()
+        filename, filepath = fake.file_name(), fake.file_path(depth=1).lstrip('/')
+        full_path = filepath + "/" + filename
 
         bucket_name, s3_client = bucket
 
@@ -104,15 +105,17 @@ class TestArtifacts(BaseE2ETest):
                 with open(filename, 'w', encoding='utf-8') as handler:
                     handler.write(fake.paragraph(nb_sentences=5))
 
-                s3_client.meta.client.upload_file(filename, bucket_name, filename)
+                s3_client.meta.client.upload_file(filename, bucket_name, full_path)
+                s3_client.meta.client.put_object(Bucket=bucket_name, Key=filepath + "/")
 
-        run[first].track_files(f's3://{bucket_name}/{filename}')
-        run[second].track_files(f's3://{bucket_name}/')
+        run[first].track_files(f's3://{bucket_name}/{full_path}')
+        run[second].track_files(f's3://{bucket_name}/{filepath}')
 
         run.sync()
 
         assert run[first].fetch_hash() == run[second].fetch_hash()
         assert run[first].fetch_files_list() == run[second].fetch_files_list()
+        assert len(run[first].fetch_files_list()) == 1
 
     def test_s3_download(self, run: Run, bucket):
         first = self.gen_key()
