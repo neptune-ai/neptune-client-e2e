@@ -66,83 +66,6 @@ class TestAtoms(BaseE2ETest):
         with pytest.raises(AttributeError):
             run[key].fetch()
 
-    def test_uploading_and_downloading_file(self, run):
-        key = self.gen_key()
-        filename = fake.file_name()
-        downloaded_filename = fake.file_name()
-
-        with tempfile.TemporaryDirectory() as tmp:
-            with preserve_cwd(tmp):
-                # create 10MB file
-                with open(filename, "wb") as f:
-                    f.write(b"\0" * 10 * 2 ** 20)
-                run[key].upload(filename)
-
-                run.sync()
-                run[key].download(downloaded_filename)
-
-                assert os.path.getsize(downloaded_filename) == 10 * 2 ** 20
-                with open(downloaded_filename, "rb") as f:
-                    content = f.read()
-                    assert len(content) == 10 * 2 ** 20
-                    assert content == b"\0" * 10 * 2 ** 20
-
-    def test_uploading_removing_and_downloading_fileset(self, run):
-        key = self.gen_key()
-        filename1 = fake.file_name()
-        filename2 = fake.file_name()
-
-        with tempfile.TemporaryDirectory() as tmp:
-            with preserve_cwd(tmp):
-                # create two 10MB files
-                with open(filename1, "wb") as f1, open(filename2, "wb") as f2:
-                    f1.write(b"\0" * 10 * 2 ** 20)
-                    f2.write(b"\0" * 10 * 2 ** 20)
-
-                # when one file as fileset uploaded
-                run[key].upload_files([filename1])
-
-                # then check if will be downloaded
-                run.sync()
-                run[key].download("downloaded1.zip")
-
-                with ZipFile("downloaded1.zip") as z:
-                    assert set(z.namelist()) == {filename1, "/"}
-                    with z.open(filename1, "r") as f1:
-                        content1 = f1.read()
-                        assert len(content1) == 10 * 2 ** 20
-                        assert content1 == b"\0" * 10 * 2 ** 20
-
-                # when second file as fileset uploaded
-                run[key].upload_files([filename2])
-
-                # then check if both will be downloaded
-                run.sync()
-                run[key].download("downloaded2.zip")
-
-                with ZipFile("downloaded2.zip") as z:
-                    assert set(z.namelist()) == {filename1, filename2, "/"}
-                    with z.open(filename1, "r") as f1, z.open(filename2, "r") as f2:
-                        content1 = f1.read()
-                        content2 = f2.read()
-                        assert len(content1) == len(content2) == 10 * 2 ** 20
-                        assert content1 == content2 == b"\0" * 10 * 2 ** 20
-
-                # when first file is removed
-                run[key].delete_files([filename1])
-
-                # then check if second will be downloaded
-                run.sync()
-                run[key].download("downloaded3.zip")
-
-                with ZipFile("downloaded3.zip") as z:
-                    assert set(z.namelist()) == {filename2, "/"}
-                    with z.open(filename2, "r") as f2:
-                        content2 = f2.read()
-                        assert len(content2) == 10 * 2 ** 20
-                        assert content2 == b"\0" * 10 * 2 ** 20
-
-
 class TestNamespace(BaseE2ETest):
     def test_reassigning(self, run):
         namespace = self.gen_key()
@@ -239,3 +162,82 @@ class TestStringSet:
         run.sync()
 
         assert run[self.neptune_tags_path].fetch() == {remaining_tag1, remaining_tag2}
+
+
+class TestFiles(BaseE2ETest):
+    def test_file(self, run):
+        key = self.gen_key()
+        filename = fake.file_name()
+        downloaded_filename = fake.file_name()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            with preserve_cwd(tmp):
+                # create 10MB file
+                with open(filename, "wb") as file:
+                    file.write(b"\0" * 10 * 2 ** 20)
+                run[key].upload(filename)
+
+                run.sync()
+                run[key].download(downloaded_filename)
+
+                assert os.path.getsize(downloaded_filename) == 10 * 2 ** 20
+                with open(downloaded_filename, "rb") as file:
+                    content = file.read()
+                    assert len(content) == 10 * 2 ** 20
+                    assert content == b"\0" * 10 * 2 ** 20
+
+    def test_fileset(self, run):
+        key = self.gen_key()
+        filename1 = fake.file_name()
+        filename2 = fake.file_name()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            with preserve_cwd(tmp):
+                # create two 10MB files
+                with open(filename1, "wb") as file1, open(filename2, "wb") as file2:
+                    file1.write(b"\0" * 10 * 2 ** 20)
+                    file2.write(b"\0" * 10 * 2 ** 20)
+
+                # when one file as fileset uploaded
+                run[key].upload_files([filename1])
+
+                # then check if will be downloaded
+                run.sync()
+                run[key].download("downloaded1.zip")
+
+                with ZipFile("downloaded1.zip") as zipped:
+                    assert set(zipped.namelist()) == {filename1, "/"}
+                    with zipped.open(filename1, "r") as file1:
+                        content1 = file1.read()
+                        assert len(content1) == 10 * 2 ** 20
+                        assert content1 == b"\0" * 10 * 2 ** 20
+
+                # when second file as fileset uploaded
+                run[key].upload_files([filename2])
+
+                # then check if both will be downloaded
+                run.sync()
+                run[key].download("downloaded2.zip")
+
+                with ZipFile("downloaded2.zip") as zipped:
+                    assert set(zipped.namelist()) == {filename1, filename2, "/"}
+                    with zipped.open(filename1, "r") as file1,\
+                            zipped.open(filename2, "r") as file2:
+                        content1 = file1.read()
+                        content2 = file2.read()
+                        assert len(content1) == len(content2) == 10 * 2 ** 20
+                        assert content1 == content2 == b"\0" * 10 * 2 ** 20
+
+                # when first file is removed
+                run[key].delete_files([filename1])
+
+                # then check if second will be downloaded
+                run.sync()
+                run[key].download("downloaded3.zip")
+
+                with ZipFile("downloaded3.zip") as zipped:
+                    assert set(zipped.namelist()) == {filename2, "/"}
+                    with zipped.open(filename2, "r") as file2:
+                        content2 = file2.read()
+                        assert len(content2) == 10 * 2 ** 20
+                        assert content2 == b"\0" * 10 * 2 ** 20
