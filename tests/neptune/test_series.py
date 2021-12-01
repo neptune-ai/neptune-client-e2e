@@ -13,14 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-import io
 import random
 import tempfile
-from itertools import chain
-from zipfile import ZipFile
 
 from PIL import Image
-from PIL.PngImagePlugin import PngImageFile
 from faker import Faker
 
 from tests.base import BaseE2ETest
