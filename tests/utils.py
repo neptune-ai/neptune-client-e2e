@@ -18,8 +18,13 @@ __all__ = [
     'preserve_cwd'
 ]
 
+import io
 import os
 from contextlib import contextmanager
+
+import numpy
+from PIL import Image
+from PIL.PngImagePlugin import PngImageFile
 
 
 def _remove_file_if_exists(filepath):
@@ -47,3 +52,15 @@ def preserve_cwd(path):
     os.chdir(path)
     yield
     os.chdir(cwd)
+
+
+def generate_image(*, size: int) -> Image:
+    random_numbers = numpy.random.rand(size, size, 3) * 255
+    return Image.fromarray(random_numbers.astype('uint8')).convert('RGB')
+
+
+def image_to_png(*, image: Image) -> PngImageFile:
+    png_buf = io.BytesIO()
+    image.save(png_buf, format="png")
+    png_buf.seek(0)
+    return PngImageFile(png_buf)
