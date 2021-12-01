@@ -13,11 +13,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+import io
 import random
+import tempfile
+from itertools import chain
+from zipfile import ZipFile
 
+from PIL import Image
+from PIL.PngImagePlugin import PngImageFile
 from faker import Faker
 
 from tests.base import BaseE2ETest
+from tests.utils import generate_image, image_to_png, preserve_cwd
 
 fake = Faker()
 
@@ -48,3 +55,24 @@ class TestSeries(BaseE2ETest):
 
         fetched_values = run[key].fetch_values()
         assert list(fetched_values['value']) == values
+
+    def test_log_images(self, run):
+        key = self.gen_key()
+        # images with size between 200KB - 12MB
+        images = list(generate_image(size=2 ** n) for n in range(8, 12))
+
+        run[key].log(images[0])
+        run[key].log(images[1:])
+        run.sync()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            with preserve_cwd(tmp):
+                run[key].download_last('last')
+                run[key].download('all')
+
+                with Image.open("last/3.png") as img:
+                    assert img == image_to_png(image=images[-1])
+
+                for i in range(4):
+                    with Image.open(f"all/{i}.png") as img:
+                        assert img == image_to_png(image=images[i])
