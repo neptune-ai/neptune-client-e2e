@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+import random
 import pytest
 from faker import Faker
 
@@ -27,29 +28,32 @@ fake = Faker()
 
 class TestCopying(BaseE2ETest):
     @pytest.mark.parametrize('container', ['run'], indirect=True)
-    def test_copy_project_attribute_to_run(self, container: Run):
+    @pytest.mark.parametrize("value", [random.randint(0, 100), random.random(), fake.boolean(), fake.word()])
+    def test_copy_project_attribute_to_run(self, container: Run, value):
         project = neptune.init_project()
-        values = [self.gen_key() for _ in range(10)]
-        src, destination = self.gen_key(), self.gen_key()
+        src, destination, destination2 = self.gen_key(), self.gen_key(), self.gen_key()
 
-        project[src].log(values)
-        container[destination] = project[src].fetch()
+        project[src] = value
+        container[destination] = project[src]
 
         project[src].log("One Extra")
 
-        assert list(project[src].fetch_values()['value'].values) == values + ["One Extra"]
-        assert list(container[destination].fetch_values()['value'].values) == values
+        assert project[src] == value
+        assert container[destination] == value
+        assert container[destination2] == value
 
     @pytest.mark.parametrize('container', ['project'], indirect=True)
-    def test_copy_run_attribute_to_project(self, container: Project):
+    @pytest.mark.parametrize("value", [random.randint(0, 100), random.random(), fake.boolean(), fake.word()])
+    def test_copy_run_attribute_to_project(self, container: Project, value):
         project = neptune.init_project()
-        values = [self.gen_key() for _ in range(10)]
-        src, destination = self.gen_key(), self.gen_key()
+        src, destination, destination2 = self.gen_key(), self.gen_key(), self.gen_key()
 
-        project[src].log(values)
-        container[destination] = project[src].fetch()
+        container[src] = value
+        project[destination] = container[src]
+        project[destination2] = project[destination]
 
         project[src].log("One Extra")
 
-        assert list(project[src].fetch_values()['value'].values) == values + ["One Extra"]
-        assert list(container[destination].fetch_values()['value'].values) == values
+        assert container[src] == value
+        assert project[destination] == value
+        assert project[destination2] == value
