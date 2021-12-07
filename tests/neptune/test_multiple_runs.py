@@ -32,16 +32,17 @@ def store_in_run(run_short_id: str, destination: str):
 
 
 class TestMultipleRuns(BaseE2ETest):
-    def test_multiple_runs_single(self, run: neptune.Run):
+    @pytest.mark.parametrize('container', ['run'], indirect=True)
+    def test_multiple_runs_single(self, container: neptune.Run):
         # pylint: disable=protected-access,undefined-loop-variable
 
         number_of_reinitialized = 5
         namespace = fake.unique.word()
 
-        reinitialized_runs = [neptune.init(run=run._short_id) for _ in range(number_of_reinitialized)]
+        reinitialized_runs = [neptune.init(run=container._short_id) for _ in range(number_of_reinitialized)]
 
-        run[f'{namespace}/{fake.unique.word()}'] = fake.color()
-        run.sync()
+        container[f'{namespace}/{fake.unique.word()}'] = fake.color()
+        container.sync()
 
         random.shuffle(reinitialized_runs)
         for run in reinitialized_runs:
@@ -51,47 +52,49 @@ class TestMultipleRuns(BaseE2ETest):
         for run in reinitialized_runs:
             run.sync()
 
-        run.sync()
+        container.sync()
 
-        assert len(run[namespace].fetch()) == number_of_reinitialized + 1
+        assert len(container[namespace].fetch()) == number_of_reinitialized + 1
 
     @pytest.mark.skip(reason="no way of currently testing this")
-    def test_multiple_runs_processes(self, run: neptune.Run):
+    @pytest.mark.parametrize('container', ['run'], indirect=True)
+    def test_multiple_runs_processes(self, container: neptune.Run):
         # pylint: disable=protected-access
 
         number_of_reinitialized = 10
         namespace = fake.unique.word()
 
-        run[f'{namespace}/{fake.unique.word()}'] = fake.color()
+        container[f'{namespace}/{fake.unique.word()}'] = fake.color()
 
         with concurrent.futures.ProcessPoolExecutor(max_workers=3) as executor:
             futures = [
-                executor.submit(store_in_run, run._short_id, f'{namespace}/{fake.unique.word()}')
+                executor.submit(store_in_run, container._short_id, f'{namespace}/{fake.unique.word()}')
                 for _ in range(number_of_reinitialized)
             ]
             for future in concurrent.futures.as_completed(futures):
                 _ = future.result()
 
-        run.sync()
+        container.sync()
 
-        assert len(run[namespace].fetch()) == number_of_reinitialized + 1
+        assert len(container[namespace].fetch()) == number_of_reinitialized + 1
 
-    def test_multiple_runs_thread(self, run: neptune.Run):
+    @pytest.mark.parametrize('container', ['run'], indirect=True)
+    def test_multiple_runs_thread(self, container: neptune.Run):
         # pylint: disable=protected-access
 
         number_of_reinitialized = 10
         namespace = fake.unique.word()
 
-        run[f'{namespace}/{fake.unique.word()}'] = fake.color()
+        container[f'{namespace}/{fake.unique.word()}'] = fake.color()
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
             futures = [
-                executor.submit(store_in_run, run._short_id, f'{namespace}/{fake.unique.word()}')
+                executor.submit(store_in_run, container._short_id, f'{namespace}/{fake.unique.word()}')
                 for _ in range(number_of_reinitialized)
             ]
             for future in concurrent.futures.as_completed(futures):
                 _ = future.result()
 
-        run.sync()
+        container.sync()
 
-        assert len(run[namespace].fetch()) == number_of_reinitialized + 1
+        assert len(container[namespace].fetch()) == number_of_reinitialized + 1

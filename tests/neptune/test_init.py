@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 from faker import Faker
 
 import neptune.new as neptune
@@ -23,14 +22,14 @@ from tests.utils import with_check_if_file_appears
 fake = Faker()
 
 
-class TestInit(BaseE2ETest):
+class TestInitRun(BaseE2ETest):
     # TODO: test all remaining init parameters
     def test_resuming_exp(self):
-        key = self.gen_key()
-
         exp = neptune.init(
             name='E2e init resume'
         )
+
+        key = self.gen_key()
         val = fake.word()
         exp[key] = val
         exp.sync()
@@ -50,3 +49,23 @@ class TestInit(BaseE2ETest):
         exp.sync()
         with with_check_if_file_appears('files.zip'):
             exp['source_code/files'].download()
+
+
+class TestInitProject(BaseE2ETest):
+    def test_get_project(self):
+        project = neptune.get_project()
+        assert project['sys/id'] == project._id  # pylint: disable=protected-access
+
+    def test_init_and_resume(self):
+        project = neptune.init_project()
+
+        key = self.gen_key()
+        val = fake.word()
+        project[key] = val
+        project.sync()
+
+        project.stop()
+
+        read_only_project = neptune.get_project()
+        assert read_only_project['sys/id'] == project._id  # pylint: disable=protected-access
+        assert read_only_project[key].fetch() == val

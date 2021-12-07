@@ -22,6 +22,8 @@ from zipfile import ZipFile
 import pytest
 from faker import Faker
 
+from neptune.new.attribute_container import AttributeContainer
+
 from tests.base import BaseE2ETest
 from tests.utils import preserve_cwd
 
@@ -29,143 +31,154 @@ fake = Faker()
 
 
 class TestAtoms(BaseE2ETest):
+    @pytest.mark.parametrize('container', ['project', 'run'], indirect=True)
     @pytest.mark.parametrize("value", [random.randint(0, 100), random.random(), fake.boolean(), fake.word()])
-    def test_simple_assign_and_fetch(self, run, value):
+    def test_simple_assign_and_fetch(self, container: AttributeContainer, value):
         key = self.gen_key()
 
-        run[key] = value
-        run.sync()
-        assert run[key].fetch() == value
+        container[key] = value
+        container.sync()
+        assert container[key].fetch() == value
 
-    def test_simple_assign_datetime(self, run):
+    @pytest.mark.parametrize('container', ['project', 'run'], indirect=True)
+    def test_simple_assign_datetime(self, container: AttributeContainer):
         key = self.gen_key()
         now = datetime.now()
 
-        run[key] = now
-        run.sync()
+        container[key] = now
+        container.sync()
 
         # expect truncate to milliseconds and add UTC timezone
         expected_now = now.astimezone(timezone.utc).replace(microsecond=int(now.microsecond / 1000) * 1000)
-        assert run[key].fetch() == expected_now
+        assert container[key].fetch() == expected_now
 
-    def test_fetch_non_existing_key(self, run):
+    @pytest.mark.parametrize('container', ['project', 'run'], indirect=True)
+    def test_fetch_non_existing_key(self, container: AttributeContainer):
         key = self.gen_key()
         with pytest.raises(AttributeError):
-            run[key].fetch()
+            container[key].fetch()
 
-    def test_delete_atom(self, run):
+    @pytest.mark.parametrize('container', ['project', 'run'], indirect=True)
+    def test_delete_atom(self, container: AttributeContainer):
         key = self.gen_key()
         value = fake.name()
 
-        run[key] = value
-        run.sync()
+        container[key] = value
+        container.sync()
 
-        assert run[key].fetch() == value
+        assert container[key].fetch() == value
 
-        del run[key]
+        del container[key]
         with pytest.raises(AttributeError):
-            run[key].fetch()
+            container[key].fetch()
+
 
 class TestNamespace(BaseE2ETest):
-    def test_reassigning(self, run):
+    @pytest.mark.parametrize('container', ['project', 'run'], indirect=True)
+    def test_reassigning(self, container: AttributeContainer):
         namespace = self.gen_key()
         key = f"{fake.unique.word()}/{fake.unique.word()}"
         value = fake.name()
 
         # Assign a namespace
-        run[namespace] = {
+        container[namespace] = {
             f"{key}": value
         }
-        run.sync()
+        container.sync()
 
-        assert run[f"{namespace}/{key}"].fetch() == value
+        assert container[f"{namespace}/{key}"].fetch() == value
 
         # Direct reassign internal value
         value = fake.name()
-        run[f"{namespace}/{key}"] = value
-        run.sync()
+        container[f"{namespace}/{key}"] = value
+        container.sync()
 
-        assert run[f"{namespace}/{key}"].fetch() == value
+        assert container[f"{namespace}/{key}"].fetch() == value
 
         # Reassigning by namespace
         value = fake.name()
-        run[namespace] = {
+        container[namespace] = {
             f"{key}": value
         }
-        run.sync()
+        container.sync()
 
-        assert run[f"{namespace}/{key}"].fetch() == value
+        assert container[f"{namespace}/{key}"].fetch() == value
 
-    def test_distinct_types(self, run):
+    @pytest.mark.parametrize('container', ['project', 'run'], indirect=True)
+    def test_distinct_types(self, container: AttributeContainer):
         namespace = self.gen_key()
         key = f"{fake.unique.word()}/{fake.unique.word()}"
         value = random.randint(0, 100)
 
-        run[namespace] = {
+        container[namespace] = {
             f"{key}": value
         }
-        run.sync()
+        container.sync()
 
-        assert run[f"{namespace}/{key}"].fetch() == value
+        assert container[f"{namespace}/{key}"].fetch() == value
 
         new_value = fake.name()
 
         with pytest.raises(ValueError):
-            run[namespace] = {
+            container[namespace] = {
                 f"{key}": new_value
             }
-            run.sync()
+            container.sync()
 
-    def test_delete_namespace(self, run):
+    @pytest.mark.parametrize('container', ['project', 'run'], indirect=True)
+    def test_delete_namespace(self, container: AttributeContainer):
         namespace = fake.unique.word()
         key1 = fake.unique.word()
         key2 = fake.unique.word()
         value1 = fake.name()
         value2 = fake.name()
 
-        run[namespace][key1] = value1
-        run[namespace][key2] = value2
-        run.sync()
+        container[namespace][key1] = value1
+        container[namespace][key2] = value2
+        container.sync()
 
-        assert run[namespace][key1].fetch() == value1
-        assert run[namespace][key2].fetch() == value2
+        assert container[namespace][key1].fetch() == value1
+        assert container[namespace][key2].fetch() == value2
 
-        del run[namespace]
+        del container[namespace]
         with pytest.raises(AttributeError):
-            run[namespace][key1].fetch()
+            container[namespace][key1].fetch()
         with pytest.raises(AttributeError):
-            run[namespace][key2].fetch()
+            container[namespace][key2].fetch()
 
 
 class TestStringSet:
     neptune_tags_path = 'sys/tags'
 
-    def test_do_not_accept_non_tag_path(self, run):
+    @pytest.mark.parametrize('container', ['project', 'run'], indirect=True)
+    def test_do_not_accept_non_tag_path(self, container: AttributeContainer):
         random_path = 'some/path'
-        run[random_path].add(fake.unique.word())
-        run.sync()
+        container[random_path].add(fake.unique.word())
+        container.sync()
 
         with pytest.raises(AttributeError):
             # backends accepts `'sys/tags'` only
-            run[random_path].fetch()
+            container[random_path].fetch()
 
-    def test_add_and_remove_tags(self, run):
+    @pytest.mark.parametrize('container', ['project', 'run'], indirect=True)
+    def test_add_and_remove_tags(self, container: AttributeContainer):
         remaining_tag1 = fake.unique.word()
         remaining_tag2 = fake.unique.word()
         to_remove_tag1 = fake.unique.word()
         to_remove_tag2 = fake.unique.word()
 
-        run[self.neptune_tags_path].add(remaining_tag1)
-        run[self.neptune_tags_path].add([to_remove_tag1, remaining_tag2])
-        run[self.neptune_tags_path].remove(to_remove_tag1)
-        run[self.neptune_tags_path].remove(to_remove_tag2)  # remove non existing tag
-        run.sync()
+        container[self.neptune_tags_path].add(remaining_tag1)
+        container[self.neptune_tags_path].add([to_remove_tag1, remaining_tag2])
+        container[self.neptune_tags_path].remove(to_remove_tag1)
+        container[self.neptune_tags_path].remove(to_remove_tag2)  # remove non existing tag
+        container.sync()
 
-        assert run[self.neptune_tags_path].fetch() == {remaining_tag1, remaining_tag2}
+        assert container[self.neptune_tags_path].fetch() == {remaining_tag1, remaining_tag2}
 
 
 class TestFiles(BaseE2ETest):
-    def test_file(self, run):
+    @pytest.mark.parametrize('container', ['project', 'run'], indirect=True)
+    def test_file(self, container: AttributeContainer):
         key = self.gen_key()
         filename = fake.file_name()
         downloaded_filename = fake.file_name()
@@ -175,10 +188,10 @@ class TestFiles(BaseE2ETest):
                 # create 10MB file
                 with open(filename, "wb") as file:
                     file.write(b"\0" * 10 * 2 ** 20)
-                run[key].upload(filename)
+                container[key].upload(filename)
 
-                run.sync()
-                run[key].download(downloaded_filename)
+                container.sync()
+                container[key].download(downloaded_filename)
 
                 assert os.path.getsize(downloaded_filename) == 10 * 2 ** 20
                 with open(downloaded_filename, "rb") as file:
@@ -186,7 +199,8 @@ class TestFiles(BaseE2ETest):
                     assert len(content) == 10 * 2 ** 20
                     assert content == b"\0" * 10 * 2 ** 20
 
-    def test_fileset(self, run):
+    @pytest.mark.parametrize('container', ['project', 'run'], indirect=True)
+    def test_fileset(self, container: AttributeContainer):
         key = self.gen_key()
         filename1 = fake.file_name()
         filename2 = fake.file_name()
@@ -199,11 +213,11 @@ class TestFiles(BaseE2ETest):
                     file2.write(b"\0" * 10 * 2 ** 20)
 
                 # when one file as fileset uploaded
-                run[key].upload_files([filename1])
+                container[key].upload_files([filename1])
 
                 # then check if will be downloaded
-                run.sync()
-                run[key].download("downloaded1.zip")
+                container.sync()
+                container[key].download("downloaded1.zip")
 
                 with ZipFile("downloaded1.zip") as zipped:
                     assert set(zipped.namelist()) == {filename1, "/"}
@@ -213,11 +227,11 @@ class TestFiles(BaseE2ETest):
                         assert content1 == b"\0" * 10 * 2 ** 20
 
                 # when second file as fileset uploaded
-                run[key].upload_files([filename2])
+                container[key].upload_files([filename2])
 
                 # then check if both will be downloaded
-                run.sync()
-                run[key].download("downloaded2.zip")
+                container.sync()
+                container[key].download("downloaded2.zip")
 
                 with ZipFile("downloaded2.zip") as zipped:
                     assert set(zipped.namelist()) == {filename1, filename2, "/"}
@@ -229,11 +243,11 @@ class TestFiles(BaseE2ETest):
                         assert content1 == content2 == b"\0" * 10 * 2 ** 20
 
                 # when first file is removed
-                run[key].delete_files([filename1])
+                container[key].delete_files([filename1])
 
                 # then check if second will be downloaded
-                run.sync()
-                run[key].download("downloaded3.zip")
+                container.sync()
+                container[key].download("downloaded3.zip")
 
                 with ZipFile("downloaded3.zip") as zipped:
                     assert set(zipped.namelist()) == {filename2, "/"}

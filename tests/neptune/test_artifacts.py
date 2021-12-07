@@ -18,17 +18,21 @@ import tempfile
 import time
 from pathlib import Path
 
+import pytest
 from faker import Faker
 
-from neptune.new import Run
+from neptune.new.attribute_container import AttributeContainer
+
 from tests.base import BaseE2ETest
 from tests.utils import with_check_if_file_appears, preserve_cwd
+
 
 fake = Faker()
 
 
 class TestArtifacts(BaseE2ETest):
-    def test_local_creation(self, run: Run):
+    @pytest.mark.parametrize('container', ['project', 'run'], indirect=True)
+    def test_local_creation(self, container: AttributeContainer):
         first, second = self.gen_key(), self.gen_key()
         filename = fake.file_name()
 
@@ -37,15 +41,16 @@ class TestArtifacts(BaseE2ETest):
                 with open(filename, 'w', encoding='utf-8') as handler:
                     handler.write(fake.paragraph(nb_sentences=5))
 
-                run[first].track_files('.')
-                run[second].track_files(f'file://{tmp}')
+                container[first].track_files('.')
+                container[second].track_files(f'file://{tmp}')
 
-                run.sync()
+                container.sync()
 
-        assert run[first].fetch_hash() == run[second].fetch_hash()
-        assert run[first].fetch_files_list() == run[second].fetch_files_list()
+        assert container[first].fetch_hash() == container[second].fetch_hash()
+        assert container[first].fetch_files_list() == container[second].fetch_files_list()
 
-    def test_assignment(self, run: Run):
+    @pytest.mark.parametrize('container', ['project', 'run'], indirect=True)
+    def test_assignment(self, container: AttributeContainer):
         first, second = self.gen_key(), self.gen_key()
         filename = fake.file_name()
 
@@ -55,15 +60,16 @@ class TestArtifacts(BaseE2ETest):
                 with open(filename, 'w', encoding='utf-8') as handler:
                     handler.write(fake.paragraph(nb_sentences=5))
 
-                run[first].track_files(filename)
-                run.wait()
-                run[second] = run[first].fetch()
-                run.sync()
+                container[first].track_files(filename)
+                container.wait()
+                container[second] = container[first].fetch()
+                container.sync()
 
-        assert run[first].fetch_hash() == run[second].fetch_hash()
-        assert run[first].fetch_files_list() == run[second].fetch_files_list()
+        assert container[first].fetch_hash() == container[second].fetch_hash()
+        assert container[first].fetch_files_list() == container[second].fetch_files_list()
 
-    def test_local_download(self, run: Run):
+    @pytest.mark.parametrize('container', ['project', 'run'], indirect=True)
+    def test_local_download(self, container: AttributeContainer):
         first, second = self.gen_key(), self.gen_key()
         filename, filepath = fake.file_name(), fake.file_path(depth=3).lstrip('/')
 
@@ -78,21 +84,22 @@ class TestArtifacts(BaseE2ETest):
                     handler.write(fake.paragraph(nb_sentences=5))
 
                 # Relative path
-                run[first].track_files(filename)
+                container[first].track_files(filename)
                 # Absolute path
-                run[second].track_files(tmp)
+                container[second].track_files(tmp)
 
-                run.sync()
+                container.sync()
 
                 with tempfile.TemporaryDirectory() as another_tmp:
                     with preserve_cwd(another_tmp):
                         with with_check_if_file_appears(f'artifacts/{filename}'):
-                            run[first].download('artifacts/')
+                            container[first].download('artifacts/')
 
                         with with_check_if_file_appears(filepath):
-                            run[second].download()
+                            container[second].download()
 
-    def test_s3_creation(self, run: Run, bucket):
+    @pytest.mark.parametrize('container', ['project', 'run'], indirect=True)
+    def test_s3_creation(self, container: AttributeContainer, bucket):
         first, second = self.gen_key(), self.gen_key()
         filename = fake.file_name()
 
@@ -106,15 +113,16 @@ class TestArtifacts(BaseE2ETest):
 
                 s3_client.meta.client.upload_file(filename, bucket_name, filename)
 
-        run[first].track_files(f's3://{bucket_name}/{filename}')
-        run[second].track_files(f's3://{bucket_name}/')
+        container[first].track_files(f's3://{bucket_name}/{filename}')
+        container[second].track_files(f's3://{bucket_name}/')
 
-        run.sync()
+        container.sync()
 
-        assert run[first].fetch_hash() == run[second].fetch_hash()
-        assert run[first].fetch_files_list() == run[second].fetch_files_list()
+        assert container[first].fetch_hash() == container[second].fetch_hash()
+        assert container[first].fetch_files_list() == container[second].fetch_files_list()
 
-    def test_s3_download(self, run: Run, bucket):
+    @pytest.mark.parametrize('container', ['project', 'run'], indirect=True)
+    def test_s3_download(self, container: AttributeContainer, bucket):
         first = self.gen_key()
         filename, filepath = fake.file_name(), fake.file_path(depth=3).lstrip('/')
 
@@ -133,20 +141,21 @@ class TestArtifacts(BaseE2ETest):
                 s3_client.meta.client.upload_file(filename, bucket_name, filename)
                 s3_client.meta.client.upload_file(filepath, bucket_name, filepath)
 
-        run[first].track_files(f's3://{bucket_name}/')
+        container[first].track_files(f's3://{bucket_name}/')
 
-        run.sync()
+        container.sync()
 
         with tempfile.TemporaryDirectory() as tmp:
             with with_check_if_file_appears(f'{tmp}/{filename}'):
-                run[first].download(tmp)
+                container[first].download(tmp)
 
         with tempfile.TemporaryDirectory() as tmp:
             with preserve_cwd(tmp):
                 with with_check_if_file_appears(filename):
-                    run[first].download()
+                    container[first].download()
 
-    def test_s3_existing(self, run: Run, bucket):
+    @pytest.mark.parametrize('container', ['project', 'run'], indirect=True)
+    def test_s3_existing(self, container: AttributeContainer, bucket):
         first, second = self.gen_key(), self.gen_key()
         filename, filepath = fake.file_name(), fake.file_path(depth=3).lstrip('/')
 
@@ -166,21 +175,22 @@ class TestArtifacts(BaseE2ETest):
                 s3_client.meta.client.upload_file(filepath, bucket_name, filepath)
 
         # Track all files - "a" and "b" to first artifact
-        run[first].track_files(f's3://{bucket_name}/')
+        container[first].track_files(f's3://{bucket_name}/')
 
         # Track only the "a" file to second artifact
-        run[second].track_files(f's3://{bucket_name}/{filename}')
-        run.sync()
+        container[second].track_files(f's3://{bucket_name}/{filename}')
+        container.sync()
 
         # Add "b" file to existing second artifact
         # so it should be now identical as first
-        run[second].track_files(f's3://{bucket_name}/{filepath}', destination=str(Path(filepath).parent))
-        run.sync()
+        container[second].track_files(f's3://{bucket_name}/{filepath}', destination=str(Path(filepath).parent))
+        container.sync()
 
-        assert run[first].fetch_hash() == run[second].fetch_hash()
-        assert run[first].fetch_files_list() == run[second].fetch_files_list()
+        assert container[first].fetch_hash() == container[second].fetch_hash()
+        assert container[first].fetch_files_list() == container[second].fetch_files_list()
 
-    def test_local_existing(self, run: Run):
+    @pytest.mark.parametrize('container', ['project', 'run'], indirect=True)
+    def test_local_existing(self, container: AttributeContainer):
         first, second = self.gen_key(), self.gen_key()
         filename, filepath = fake.file_name(), fake.file_path(depth=3).lstrip('/')
 
@@ -194,21 +204,22 @@ class TestArtifacts(BaseE2ETest):
                     handler.write(fake.paragraph(nb_sentences=5))
 
                 # Track all files - "a" and "b" to first artifact
-                run[first].track_files('.')
+                container[first].track_files('.')
 
                 # Track only the "a" file to second artifact
-                run[second].track_files(f'file://{tmp}/{filename}')
-                run.sync()
+                container[second].track_files(f'file://{tmp}/{filename}')
+                container.sync()
 
                 # Add "b" file to existing second artifact
                 # so it should be now identical as first
-                run[second].track_files(filepath, destination=str(Path(filepath).parent))
-                run.sync()
+                container[second].track_files(filepath, destination=str(Path(filepath).parent))
+                container.sync()
 
-        assert run[first].fetch_hash() == run[second].fetch_hash()
-        assert run[first].fetch_files_list() == run[second].fetch_files_list()
+        assert container[first].fetch_hash() == container[second].fetch_hash()
+        assert container[first].fetch_files_list() == container[second].fetch_files_list()
 
-    def test_hash_cache(self, run: Run):
+    @pytest.mark.parametrize('container', ['project', 'run'], indirect=True)
+    def test_hash_cache(self, container: AttributeContainer):
         key = self.gen_key()
         filename = fake.file_name()
 
@@ -220,12 +231,12 @@ class TestArtifacts(BaseE2ETest):
 
                 # track it
                 start = time.time()
-                run[key].track_files('.', wait=True)
+                container[key].track_files('.', wait=True)
                 initial_duration = time.time() - start
 
                 # and track it again
                 start = time.time()
-                run[key].track_files('.', wait=True)
+                container[key].track_files('.', wait=True)
                 retry_duration = time.time() - start
 
                 assert retry_duration * 2 < initial_duration, "Tracking again should be significantly faster"
@@ -236,7 +247,7 @@ class TestArtifacts(BaseE2ETest):
 
                 # and track updated file
                 start = time.time()
-                run[key].track_files('.', wait=True)
+                container[key].track_files('.', wait=True)
                 updated_duration = time.time() - start
 
                 assert retry_duration * 2 < updated_duration, "Tracking updated file should take more time - no cache"
