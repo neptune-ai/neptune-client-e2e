@@ -27,33 +27,36 @@ fake = Faker()
 
 
 class TestCopying(BaseE2ETest):
-    @pytest.mark.parametrize('container', ['run'], indirect=True)
+    @pytest.mark.parametrize('container', ['run', 'project'], indirect=True)
     @pytest.mark.parametrize("value", [random.randint(0, 100), random.random(), fake.boolean(), fake.word()])
-    def test_copy_project_attr_to_run(self, container: Run, value):
+    def test_copy_project_attr_to_container(self, container: Run, value):
         project = neptune.init_project()
         src, destination, destination2 = self.gen_key(), self.gen_key(), self.gen_key()
 
         project[src] = value
         container[destination] = project[src]
+        container[destination2] = container[destination]
 
-        project[src].log("One Extra")
+        project.sync()
+        container.sync()
 
-        assert project[src] == value
-        assert container[destination] == value
-        assert container[destination2] == value
+        assert project[src].fetch() == value
+        assert container[destination].fetch() == value
+        assert container[destination2].fetch() == value
 
-    @pytest.mark.parametrize('container', ['project'], indirect=True)
+    @pytest.mark.parametrize('container', ['project', 'run'], indirect=True)
     @pytest.mark.parametrize("value", [random.randint(0, 100), random.random(), fake.boolean(), fake.word()])
-    def test_copy_run_attr_to_project(self, container: Project, value):
-        project = neptune.init_project()
+    def test_copy_run_attr_to_container(self, container: Project, value):
+        run = neptune.init_run()
         src, destination, destination2 = self.gen_key(), self.gen_key(), self.gen_key()
 
         container[src] = value
-        project[destination] = container[src]
-        project[destination2] = project[destination]
+        run[destination] = container[src]
+        run[destination2] = run[destination]
 
-        project[src].log("One Extra")
+        container.sync()
+        run.sync()
 
-        assert container[src] == value
-        assert project[destination] == value
-        assert project[destination2] == value
+        assert container[src].fetch() == value
+        assert run[destination].fetch() == value
+        assert run[destination2].fetch() == value
