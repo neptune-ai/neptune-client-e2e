@@ -22,15 +22,6 @@ import pytest
 import neptune.new as neptune
 
 
-@pytest.fixture(scope='session', name='run')
-def run():
-    exp = neptune.init_run(
-        name='E2e main run'
-    )
-    yield exp
-    exp.stop()
-
-
 @pytest.fixture(scope='session')
 def container(request):
     if request.param == 'project':

@@ -16,6 +16,8 @@
 from faker import Faker
 
 import neptune.new as neptune
+from neptune.new.project import Project
+
 from tests.base import BaseE2ETest
 from tests.utils import with_check_if_file_appears
 
@@ -52,20 +54,19 @@ class TestInitRun(BaseE2ETest):
 
 
 class TestInitProject(BaseE2ETest):
-    def test_get_project(self):
-        project = neptune.get_project()
-        assert project['sys/id'] == project._id  # pylint: disable=protected-access
-
-    def test_init_and_resume(self):
-        project = neptune.init_project()
+    def test_init_and_readonly(self):
+        project: Project = neptune.init_project()
 
         key = self.gen_key()
         val = fake.word()
         project[key] = val
         project.sync()
-
         project.stop()
 
         read_only_project = neptune.get_project()
-        assert read_only_project['sys/id'] == project._id  # pylint: disable=protected-access
+        read_only_project.sync()
+
+        assert set(read_only_project.get_structure()['sys']) == {'creation_time', 'id', 'modification_time',
+                                                                 'monitoring_time', 'owner', 'ping_time',
+                                                                 'running_time', 'size', 'state', 'tags'}
         assert read_only_project[key].fetch() == val

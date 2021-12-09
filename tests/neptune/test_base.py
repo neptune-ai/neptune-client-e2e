@@ -167,6 +167,9 @@ class TestStringSet:
         to_remove_tag1 = fake.unique.word()
         to_remove_tag2 = fake.unique.word()
 
+        container.sync()
+        if container.exists(self.neptune_tags_path):
+            container[self.neptune_tags_path].clear()
         container[self.neptune_tags_path].add(remaining_tag1)
         container[self.neptune_tags_path].add([to_remove_tag1, remaining_tag2])
         container[self.neptune_tags_path].remove(to_remove_tag1)
