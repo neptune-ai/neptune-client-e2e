@@ -29,7 +29,7 @@ fake = Faker()
 class TestCopying(BaseE2ETest):
     @pytest.mark.parametrize('container', ['run', 'project'], indirect=True)
     @pytest.mark.parametrize("value", [random.randint(0, 100), random.random(), fake.boolean(), fake.word()])
-    def test_copy_project_attr_to_container(self, container: Run, value):
+    def test_copy_project_to_container(self, container: Run, value):
         project = neptune.init_project()
         src, destination, destination2 = self.gen_key(), self.gen_key(), self.gen_key()
 
@@ -46,7 +46,7 @@ class TestCopying(BaseE2ETest):
 
     @pytest.mark.parametrize('container', ['project', 'run'], indirect=True)
     @pytest.mark.parametrize("value", [random.randint(0, 100), random.random(), fake.boolean(), fake.word()])
-    def test_copy_run_attr_to_container(self, container: Project, value):
+    def test_copy_run_to_container(self, container: Project, value):
         run = neptune.init_run()
         src, destination, destination2 = self.gen_key(), self.gen_key(), self.gen_key()
 
