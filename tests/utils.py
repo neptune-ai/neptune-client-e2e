@@ -15,11 +15,12 @@
 #
 __all__ = [
     'with_check_if_file_appears',
-    'preserve_cwd'
+    'tmp_context'
 ]
 
 import io
 import os
+import tempfile
 from contextlib import contextmanager
 
 import numpy
@@ -52,6 +53,13 @@ def preserve_cwd(path):
     os.chdir(path)
     yield
     os.chdir(cwd)
+
+
+@contextmanager
+def tmp_context():
+    with tempfile.TemporaryDirectory() as tmp:
+        with preserve_cwd(tmp):
+            yield tmp
 
 
 def generate_image(*, size: int) -> Image:
