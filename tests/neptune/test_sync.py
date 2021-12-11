@@ -32,7 +32,7 @@ runner = CliRunner()
 class TestSync(BaseE2ETest):
     SYNCHRONIZED_SYSID_RE = r"\w+/[\w-]+/([\w-]+)"
 
-    def test_sync(self):
+    def test_sync_run(self):
         custom_run_id = "-".join((fake.word() for _ in range(3)))
 
         with tmp_context() as tmp:
@@ -47,62 +47,98 @@ class TestSync(BaseE2ETest):
                 **DISABLE_SYSLOG_KWARGS,
             )
 
-            # assign original value
-            run[key] = original_value
-            run.sync()
-
-            # stop run
-            run.stop()
-
-            # pylint: disable=protected-access
-            queue_dir = list(Path(f"./.neptune/async/{run._id}/").glob("exec-*"))[0]
-            with open(queue_dir / "last_put_version") as last_put_version_f:
-                last_put_version = int(last_put_version_f.read())
-            with open(queue_dir / "data-1.log", "a") as queue_f:
-                queue_f.write(
-                    json.dumps({
-                        "obj": {
-                            "type": "AssignString",
-                            "path": key.split("/"),
-                            "value": updated_value
-                        },
-                        "version": last_put_version + 1
-                    })
-                )
-            with open(queue_dir / "last_put_version", "w") as last_put_version_f:
-                last_put_version_f.write(str(last_put_version + 1))
-
-            # other exp should see only original value from server
-            exp2 = neptune.init(
-                custom_run_id=custom_run_id,
-                **DISABLE_SYSLOG_KWARGS,
-            )
-            assert exp2[key].fetch() == original_value
-
-            # run neptune sync
-            result = runner.invoke(sync, ["--path", tmp])
-            assert result.exit_code == 0
-
-            # other exp should see updated value from server
-            with tmp_context():
-                exp3 = neptune.init(
+            def get_next_run():
+                return neptune.init(
                     custom_run_id=custom_run_id,
                     **DISABLE_SYSLOG_KWARGS,
                 )
-                assert exp3[key].fetch() == updated_value
+
+            self._test_sync(
+                exp=run,
+                get_next_exp=get_next_run,
+                path=tmp,
+                key=key,
+                original_value=original_value,
+                updated_value=updated_value,
+            )
+
+    def test_sync_project(self):
+        with tmp_context() as tmp:
+            # with test values
+            key = "ProjAttrs/" + "-".join((fake.word() for _ in range(3)))
+            original_value = fake.word()
+            updated_value = fake.word()
+
+            # init run
+            project = neptune.init_project()
+
+            def get_next_project():
+                return neptune.init_project()
+
+            self._test_sync(
+                exp=project,
+                get_next_exp=get_next_project,
+                path=tmp,
+                key=key,
+                original_value=original_value,
+                updated_value=updated_value,
+            )
+
+    @staticmethod
+    def _test_sync(exp, get_next_exp, path, key, original_value, updated_value):
+        # assign original value
+        exp[key] = original_value
+        exp.sync()
+
+        # stop run
+        exp.stop()
+
+        # pylint: disable=protected-access
+        queue_dir = list(Path(f"./.neptune/async/{exp._id}/").glob("exec-*"))[0]
+        with open(queue_dir / "last_put_version") as last_put_version_f:
+            last_put_version = int(last_put_version_f.read())
+        with open(queue_dir / "data-1.log", "a") as queue_f:
+            queue_f.write(
+                json.dumps({
+                    "obj": {
+                        "type": "AssignString",
+                        "path": key.split("/"),
+                        "value": updated_value
+                    },
+                    "version": last_put_version + 1
+                })
+            )
+        with open(queue_dir / "last_put_version", "w") as last_put_version_f:
+            last_put_version_f.write(str(last_put_version + 1))
+
+        # other exp should see only original value from server
+        exp2 = get_next_exp()
+        assert exp2[key].fetch() == original_value
+
+        # run neptune sync
+        result = runner.invoke(sync, ["--path", path])
+        assert result.exit_code == 0
+
+        # other exp should see updated value from server
+        exp3 = get_next_exp()
+        assert exp3[key].fetch() == updated_value
 
     def test_offline_sync(self):
         with tmp_context() as tmp:
+            # create run in offline mode
             run = neptune.init(
                 mode="offline",
                 **DISABLE_SYSLOG_KWARGS,
             )
+            # assign some values
             key = self.gen_key()
             val = fake.word()
             run[key] = val
 
+            # and stop it
             run.stop()
 
+            # run asynchronously
             result = runner.invoke(sync, ["--path", tmp])
             assert result.exit_code == 0
 
