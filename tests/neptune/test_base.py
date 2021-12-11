@@ -15,7 +15,6 @@
 #
 import os
 import random
-import tempfile
 from datetime import datetime, timezone
 from zipfile import ZipFile
 
@@ -186,7 +185,7 @@ class TestFiles(BaseE2ETest):
         filename = fake.file_name()
         downloaded_filename = fake.file_name()
 
-        with tmp_context() as tmp:
+        with tmp_context():
             # create 10MB file
             with open(filename, "wb") as file:
                 file.write(b"\0" * 10 * 2 ** 20)
@@ -207,7 +206,7 @@ class TestFiles(BaseE2ETest):
         filename1 = fake.file_name()
         filename2 = fake.file_name()
 
-        with tmp_context as tmp:
+        with tmp_context():
             # create two 10MB files
             with open(filename1, "wb") as file1, open(filename2, "wb") as file2:
                 file1.write(b"\0" * 10 * 2 ** 20)

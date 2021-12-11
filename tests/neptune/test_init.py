@@ -41,6 +41,22 @@ class TestInitRun(BaseE2ETest):
         exp2 = neptune.init(run=exp._short_id)  # pylint: disable=protected-access
         assert exp2[key].fetch() == val
 
+    def test_custom_run_id(self):
+        custom_run_id = "-".join((fake.word() for _ in range(3)))
+        run = neptune.init(
+            custom_run_id=custom_run_id
+        )
+
+        key = self.gen_key()
+        val = fake.word()
+        run[key] = val
+        run.sync()
+
+        run.stop()
+
+        exp2 = neptune.init(custom_run_id=custom_run_id)
+        assert exp2[key].fetch() == val
+
     def test_send_source_code(self):
         exp = neptune.init(
             source_files='**/*.py',

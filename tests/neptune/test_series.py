@@ -14,7 +14,6 @@
 # limitations under the License.
 #
 import random
-import tempfile
 
 import pytest
 from PIL import Image

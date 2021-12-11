@@ -35,6 +35,14 @@ def _remove_file_if_exists(filepath):
         pass
 
 
+# init kwargs which significantly reduce operations noise
+DISABLE_SYSLOG_KWARGS = {
+    "capture_stdout": False,
+    "capture_stderr": False,
+    "capture_hardware_metrics": False,
+}
+
+
 @contextmanager
 def with_check_if_file_appears(filepath):
     """Checks if file will be present when leaving the block.
