@@ -65,7 +65,7 @@ class TestSync(BaseE2ETest):
     def test_sync_project(self):
         with tmp_context() as tmp:
             # with test values
-            key = "ProjAttrs/" + "-".join((fake.word() for _ in range(3)))
+            key = f"{self.gen_key()}-" + "-".join((fake.word() for _ in range(3)))
             original_value = fake.word()
             updated_value = fake.word()
 

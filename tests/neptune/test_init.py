@@ -26,7 +26,7 @@ fake = Faker()
 
 class TestInitRun(BaseE2ETest):
     # TODO: test all remaining init parameters
-    def test_resuming_exp(self):
+    def test_resuming_run(self):
         exp = neptune.init(
             name='E2e init resume'
         )
@@ -70,10 +70,23 @@ class TestInitRun(BaseE2ETest):
 
 
 class TestInitProject(BaseE2ETest):
+    def test_resuming_project(self):
+        exp = neptune.init_project()
+
+        key = self.gen_key()
+        val = fake.word()
+        exp[key] = val
+        exp.sync()
+
+        exp.stop()
+
+        exp2 = neptune.init_project()
+        assert exp2[key].fetch() == val
+
     def test_init_and_readonly(self):
         project: Project = neptune.init_project()
 
-        key = self.gen_key()
+        key = f"{self.gen_key()}-" + "-".join((fake.word() for _ in range(4)))
         val = fake.word()
         project[key] = val
         project.sync()
