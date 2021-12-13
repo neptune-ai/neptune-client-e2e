@@ -34,10 +34,10 @@ class TestCopying(BaseE2ETest):
         src, destination, destination2 = self.gen_key(), self.gen_key(), self.gen_key()
 
         project[src] = value
+        project.sync()
+
         container[destination] = project[src]
         container[destination2] = container[destination]
-
-        project.sync()
         container.sync()
 
         assert project[src].fetch() == value
@@ -51,10 +51,10 @@ class TestCopying(BaseE2ETest):
         src, destination, destination2 = self.gen_key(), self.gen_key(), self.gen_key()
 
         container[src] = value
+        container.sync()
+
         run[destination] = container[src]
         run[destination2] = run[destination]
-
-        container.sync()
         run.sync()
 
         assert container[src].fetch() == value
