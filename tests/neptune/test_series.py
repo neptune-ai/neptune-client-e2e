@@ -14,7 +14,6 @@
 # limitations under the License.
 #
 import random
-import tempfile
 
 import pytest
 from PIL import Image
@@ -23,7 +22,7 @@ from faker import Faker
 from neptune.new.attribute_container import AttributeContainer
 
 from tests.base import BaseE2ETest
-from tests.utils import generate_image, image_to_png, preserve_cwd
+from tests.utils import generate_image, image_to_png, tmp_context
 
 fake = Faker()
 
@@ -67,14 +66,13 @@ class TestSeries(BaseE2ETest):
         container[key].log(images[1:])
         container.sync()
 
-        with tempfile.TemporaryDirectory() as tmp:
-            with preserve_cwd(tmp):
-                container[key].download_last('last')
-                container[key].download('all')
+        with tmp_context():
+            container[key].download_last('last')
+            container[key].download('all')
 
-                with Image.open("last/3.png") as img:
-                    assert img == image_to_png(image=images[-1])
+            with Image.open("last/3.png") as img:
+                assert img == image_to_png(image=images[-1])
 
-                for i in range(4):
-                    with Image.open(f"all/{i}.png") as img:
-                        assert img == image_to_png(image=images[i])
+            for i in range(4):
+                with Image.open(f"all/{i}.png") as img:
+                    assert img == image_to_png(image=images[i])

@@ -15,11 +15,12 @@
 #
 __all__ = [
     'with_check_if_file_appears',
-    'preserve_cwd'
+    'tmp_context'
 ]
 
 import io
 import os
+import tempfile
 from contextlib import contextmanager
 
 import numpy
@@ -32,6 +33,14 @@ def _remove_file_if_exists(filepath):
         os.remove(filepath)
     except OSError:
         pass
+
+
+# init kwargs which significantly reduce operations noise
+DISABLE_SYSLOG_KWARGS = {
+    "capture_stdout": False,
+    "capture_stderr": False,
+    "capture_hardware_metrics": False,
+}
 
 
 @contextmanager
@@ -52,6 +61,13 @@ def preserve_cwd(path):
     os.chdir(path)
     yield
     os.chdir(cwd)
+
+
+@contextmanager
+def tmp_context():
+    with tempfile.TemporaryDirectory() as tmp:
+        with preserve_cwd(tmp):
+            yield tmp
 
 
 def generate_image(*, size: int) -> Image:
