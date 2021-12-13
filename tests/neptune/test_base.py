@@ -15,12 +15,15 @@
 #
 import os
 import random
+import time
+import uuid
 from datetime import datetime, timezone
 from zipfile import ZipFile
 
 import pytest
 from faker import Faker
 
+import neptune.new as neptune
 from neptune.new.attribute_container import AttributeContainer
 
 from tests.base import BaseE2ETest
@@ -255,3 +258,25 @@ class TestFiles(BaseE2ETest):
                     content2 = file2.read()
                     assert len(content2) == 10 * 2 ** 20
                     assert content2 == b"\0" * 10 * 2 ** 20
+
+
+class TestFetchRunsTable(BaseE2ETest):
+    def test_fetch_table(self):
+        tag = str(uuid.uuid4())
+        with neptune.init() as run:
+            run["sys/tags"].add(tag)
+            run["value"] = 12
+
+        with neptune.init() as run:
+            run["sys/tags"].add(tag)
+            run["another/value"] = "testing"
+
+        # wait for the elasticsearch cache to fill
+        time.sleep(1)
+
+        project = neptune.init_project()
+
+        runs_table = sorted(project.fetch_runs_table(tag=tag).to_runs(), key=lambda r: r.get_attribute_value("sys/id"))
+        assert len(runs_table) == 2
+        assert runs_table[0].get_attribute_value("value") == 12
+        assert runs_table[1].get_attribute_value("another/value") == "testing"
