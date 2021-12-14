@@ -108,8 +108,21 @@ class TestSync(BaseE2ETest):
                     "version": last_put_version + 1
                 })
             )
+            queue_f.write(
+                json.dumps({
+                    "obj": {
+                        "type": "CopyAttribute",
+                        "path": ["copy"] + key.split("/"),
+                        "container_id": exp._id,
+                        "container_type": exp.container_type.value,
+                        "source_path": key.split("/"),
+                        "source_attr_name": "String",
+                    },
+                    "version": last_put_version + 2
+                })
+            )
         with open(queue_dir / "last_put_version", "w") as last_put_version_f:
-            last_put_version_f.write(str(last_put_version + 1))
+            last_put_version_f.write(str(last_put_version + 2))
 
         # other exp should see only original value from server
         exp2 = get_next_exp()
@@ -122,6 +135,7 @@ class TestSync(BaseE2ETest):
         # other exp should see updated value from server
         exp3 = get_next_exp()
         assert exp3[key].fetch() == updated_value
+        assert exp3["copy/" + key].fetch() == updated_value
 
     def test_offline_sync(self):
         with tmp_context() as tmp:
