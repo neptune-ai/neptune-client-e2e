@@ -17,18 +17,15 @@ __all__ = [
     'BaseE2ETest',
 ]
 
-import typing
-
 from faker import Faker
 
-from neptune.new.run import Run
-from neptune.new.project import Project
+from neptune.new.attribute_container import AttributeContainer
 
 fake = Faker()
 
 
 class BaseE2ETest:
-    def cleanup(self, container: typing.Union[Run, Project]):
+    def cleanup(self, container: AttributeContainer):
         if container.exists(self.__class__.__name__):
             container.pop(self.__class__.__name__)
 
