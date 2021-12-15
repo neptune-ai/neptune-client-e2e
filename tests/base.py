@@ -17,11 +17,20 @@ __all__ = [
     'BaseE2ETest',
 ]
 
+import typing
+
 from faker import Faker
+
+from neptune.new.run import Run
+from neptune.new.project import Project
 
 fake = Faker()
 
 
 class BaseE2ETest:
+    def cleanup(self, container: typing.Union[Run, Project]):
+        if container.exists(self.__class__.__name__):
+            container.pop(self.__class__.__name__)
+
     def gen_key(self):
         return f'{self.__class__.__name__}/{fake.unique.word()}'
