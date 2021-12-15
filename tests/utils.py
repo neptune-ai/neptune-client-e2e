@@ -49,18 +49,21 @@ def with_check_if_file_appears(filepath):
     File is removed if exists when entering the block."""
     _remove_file_if_exists(filepath)
 
-    yield
-
-    assert os.path.exists(filepath)
-    _remove_file_if_exists(filepath)
+    try:
+        yield
+    finally:
+        assert os.path.exists(filepath)
+        _remove_file_if_exists(filepath)
 
 
 @contextmanager
 def preserve_cwd(path):
     cwd = os.getcwd()
     os.chdir(path)
-    yield
-    os.chdir(cwd)
+    try:
+        yield
+    finally:
+        os.chdir(cwd)
 
 
 @contextmanager
