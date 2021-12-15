@@ -33,6 +33,8 @@ fake = Faker()
 class TestArtifacts(BaseE2ETest):
     @pytest.mark.parametrize('container', ['project', 'run'], indirect=True)
     def test_local_creation(self, container: AttributeContainer):
+        self.cleanup(container)
+
         first, second = self.gen_key(), self.gen_key()
         filename = fake.file_name()
 
@@ -50,6 +52,8 @@ class TestArtifacts(BaseE2ETest):
 
     @pytest.mark.parametrize('container', ['project', 'run'], indirect=True)
     def test_assignment(self, container: AttributeContainer):
+        self.cleanup(container)
+
         first, second = self.gen_key(), self.gen_key()
         filename = fake.file_name()
 
@@ -67,6 +71,8 @@ class TestArtifacts(BaseE2ETest):
 
     @pytest.mark.parametrize('container', ['project', 'run'], indirect=True)
     def test_local_download(self, container: AttributeContainer):
+        self.cleanup(container)
+
         first, second = self.gen_key(), self.gen_key()
         filename, filepath = fake.file_name(), fake.file_path(depth=3).lstrip('/')
 
@@ -94,6 +100,8 @@ class TestArtifacts(BaseE2ETest):
 
     @pytest.mark.parametrize('container', ['project', 'run'], indirect=True)
     def test_s3_creation(self, container: AttributeContainer, bucket):
+        self.cleanup(container)
+
         first, second = self.gen_key(), self.gen_key()
         filename = fake.file_name()
 
@@ -115,6 +123,8 @@ class TestArtifacts(BaseE2ETest):
 
     @pytest.mark.parametrize('container', ['project', 'run'], indirect=True)
     def test_s3_download(self, container: AttributeContainer, bucket):
+        self.cleanup(container)
+
         first = self.gen_key()
         filename, filepath = fake.file_name(), fake.file_path(depth=3).lstrip('/')
 
@@ -145,6 +155,8 @@ class TestArtifacts(BaseE2ETest):
 
     @pytest.mark.parametrize('container', ['project', 'run'], indirect=True)
     def test_s3_existing(self, container: AttributeContainer, bucket):
+        self.cleanup(container)
+
         first, second = self.gen_key(), self.gen_key()
         filename, filepath = fake.file_name(), fake.file_path(depth=3).lstrip('/')
 
@@ -178,6 +190,8 @@ class TestArtifacts(BaseE2ETest):
 
     @pytest.mark.parametrize('container', ['project', 'run'], indirect=True)
     def test_local_existing(self, container: AttributeContainer):
+        self.cleanup(container)
+
         first, second = self.gen_key(), self.gen_key()
         filename, filepath = fake.file_name(), fake.file_path(depth=3).lstrip('/')
 
@@ -206,6 +220,8 @@ class TestArtifacts(BaseE2ETest):
 
     @pytest.mark.parametrize('container', ['project', 'run'], indirect=True)
     def test_hash_cache(self, container: AttributeContainer):
+        self.cleanup(container)
+
         key = self.gen_key()
         filename = fake.file_name()
 
