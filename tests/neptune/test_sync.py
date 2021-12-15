@@ -95,9 +95,9 @@ class TestSync(BaseE2ETest):
 
         # pylint: disable=protected-access
         queue_dir = list(Path(f"./.neptune/async/{exp._id}/").glob("exec-*"))[0]
-        with open(queue_dir / "last_put_version") as last_put_version_f:
+        with open(queue_dir / "last_put_version", encoding='utf-8') as last_put_version_f:
             last_put_version = int(last_put_version_f.read())
-        with open(queue_dir / "data-1.log", "a") as queue_f:
+        with open(queue_dir / "data-1.log", "a", encoding='utf-8') as queue_f:
             queue_f.write(
                 json.dumps({
                     "obj": {
@@ -121,7 +121,7 @@ class TestSync(BaseE2ETest):
                     "version": last_put_version + 2
                 })
             )
-        with open(queue_dir / "last_put_version", "w") as last_put_version_f:
+        with open(queue_dir / "last_put_version", "w", encoding='utf-8') as last_put_version_f:
             last_put_version_f.write(str(last_put_version + 2))
 
         # other exp should see only original value from server
