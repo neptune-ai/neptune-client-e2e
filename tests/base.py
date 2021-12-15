@@ -19,9 +19,15 @@ __all__ = [
 
 from faker import Faker
 
+from neptune.new.attribute_container import AttributeContainer
+
 fake = Faker()
 
 
 class BaseE2ETest:
+    def cleanup(self, container: AttributeContainer):
+        if container.exists(self.__class__.__name__):
+            container.pop(self.__class__.__name__)
+
     def gen_key(self):
         return f'{self.__class__.__name__}/{fake.unique.word()}'
