@@ -98,6 +98,7 @@ class TestArtifacts(BaseE2ETest):
                 with with_check_if_file_appears(filepath):
                     container[second].download()
 
+    @pytest.mark.s3
     @pytest.mark.parametrize('container', ['project', 'run'], indirect=True)
     def test_s3_creation(self, container: AttributeContainer, bucket):
         self.cleanup(container)
@@ -121,6 +122,7 @@ class TestArtifacts(BaseE2ETest):
         assert container[first].fetch_hash() == container[second].fetch_hash()
         assert container[first].fetch_files_list() == container[second].fetch_files_list()
 
+    @pytest.mark.s3
     @pytest.mark.parametrize('container', ['project', 'run'], indirect=True)
     def test_s3_download(self, container: AttributeContainer, bucket):
         self.cleanup(container)
@@ -153,6 +155,7 @@ class TestArtifacts(BaseE2ETest):
             with with_check_if_file_appears(filename):
                 container[first].download()
 
+    @pytest.mark.s3
     @pytest.mark.parametrize('container', ['project', 'run'], indirect=True)
     def test_s3_existing(self, container: AttributeContainer, bucket):
         self.cleanup(container)

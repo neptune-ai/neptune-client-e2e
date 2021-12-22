@@ -14,6 +14,7 @@
 # limitations under the License.
 #
 from faker import Faker
+import pytest
 
 from neptune.management import (
     get_project_list,
@@ -33,6 +34,7 @@ from tests.conftest import Environment
 fake = Faker()
 
 
+@pytest.mark.management
 class TestManagement(BaseE2ETest):
     def test_standard_scenario(self, environment: Environment):
         project_name: str = fake.slug()

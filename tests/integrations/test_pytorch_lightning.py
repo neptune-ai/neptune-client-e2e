@@ -17,6 +17,8 @@ import os
 import re
 import unittest
 
+import pytest
+
 import neptune.new as neptune
 import numpy as np
 import torch
@@ -197,6 +199,7 @@ class MNISTDataModule(pl.LightningDataModule):
         return mnist_test
 
 
+@pytest.mark.integrations
 class TestPytorchLightning(unittest.TestCase):
     common_neptune_run = None
 
