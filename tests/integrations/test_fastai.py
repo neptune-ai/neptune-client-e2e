@@ -15,6 +15,8 @@
 #
 from itertools import islice
 
+import pytest
+
 import neptune.new as neptune
 import neptune_fastai
 from fastai.basics import URLs, accuracy, error_rate, untar_data
@@ -28,6 +30,7 @@ def is_cat(x):
     return x[0].isupper()
 
 
+@pytest.mark.integrations
 class TestFastai:
     def test_vision_classification(self):
         # given (Subject)
