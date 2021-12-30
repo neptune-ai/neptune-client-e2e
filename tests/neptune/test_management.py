@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+from datetime import datetime
 from faker import Faker
 import pytest
 
@@ -37,8 +38,9 @@ fake = Faker()
 @pytest.mark.management
 class TestManagement(BaseE2ETest):
     def test_standard_scenario(self, environment: Environment):
-        project_name: str = fake.slug()
-        project_key: str = project_name.replace("-", "")[:3].upper()
+        project_slug = fake.slug()
+        project_name: str = f"temp-{datetime.now().strftime('%Y%m%d')}-{project_slug}"
+        project_key: str = project_slug.replace("-", "")[:3].upper()
         project_identifier: str = normalize_project_name(name=project_name, workspace=environment.workspace)
 
         assert project_identifier not in get_project_list(api_token=environment.admin_token)
