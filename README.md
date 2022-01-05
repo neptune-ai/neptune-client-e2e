@@ -1,4 +1,4 @@
-# `neptune-client` e2e tests
+# `neptune-client` e2e tests - **TESTS WERE MOVED TO [neptune-client](https://github.com/neptune-ai/neptune-client) repository**
 
 See [tested library](https://github.com/neptune-ai/neptune-client).
 
